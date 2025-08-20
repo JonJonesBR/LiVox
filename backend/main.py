@@ -942,6 +942,46 @@ async def perform_conversion_task(file_path: str, voice: str, task_id: str, use_
             except Exception as e_rmdir:
                 logger.warning(f"⚠️ Erro ao remover diretório de chunks temporários: {e_rmdir}")
 
+@app.post("/shutdown")
+async def shutdown_application():
+    """Endpoint para fechar a aplicação."""
+    import asyncio
+    import subprocess
+    import sys
+    
+    logger.info("🛑 Recebida solicitação de shutdown da aplicação...")
+    
+    # Função para fazer shutdown após responder ao cliente
+    async def perform_shutdown():
+        await asyncio.sleep(1)  # Aguardar 1 segundo para resposta chegar ao cliente
+        
+        try:
+            logger.info("🛑 Parando todos os containers do projeto...")
+            
+            # Parar container na porta 3000 (frontend)
+            result_3000 = subprocess.run([
+                "sh", "-c", "docker stop $(docker ps -q --filter 'publish=3000') 2>/dev/null || true"
+            ], capture_output=True, timeout=5)
+            
+            # Parar container na porta 8000 (backend) 
+            result_8000 = subprocess.run([
+                "sh", "-c", "docker stop $(docker ps -q --filter 'publish=8000') 2>/dev/null || true"
+            ], capture_output=True, timeout=5)
+            
+            logger.info("🛑 Comandos de parada executados via Docker CLI")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Erro ao parar containers via Docker: {e}")
+        
+        # Parar o processo atual
+        logger.info("🛑 Parando processo do backend...")
+        sys.exit(0)
+    
+    # Agendar o shutdown
+    asyncio.create_task(perform_shutdown())
+    
+    return JSONResponse({"message": "Aplicação será fechada em alguns segundos..."})
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
