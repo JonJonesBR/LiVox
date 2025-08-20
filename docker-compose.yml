@@ -7,9 +7,10 @@ services:
       - ./backend/uploads:/app/uploads
       - ./backend/audiobooks:/app/audiobooks
       - ./backend/static:/app/static
+      - /var/run/docker.sock:/var/run/docker.sock  # Acesso ao Docker
     environment:
       - PYTHONUNBUFFERED=1
-    restart: unless-stopped
+    restart: "no"
 
   # Frontend será servido pelo Next.js existente
   # Para desenvolvimento, você pode executar o Next.js separadamente
@@ -22,7 +23,7 @@ services:
       - "3000:3000"
     depends_on:
       - audiobook-backend
-    restart: unless-stopped
+    restart: "no"
 
 volumes:
   uploads:

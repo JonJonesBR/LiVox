@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/button";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
-import { Volume2, Sparkles } from "lucide-react";
+import { Volume2, Sparkles, Power } from "lucide-react";
 import { FileUploadCard } from "../../../components/FileUploadCard";
 import { SettingsCard } from "../../../components/SettingsCard";
 import { StatusCard } from "../../../components/StatusCard";
@@ -65,7 +65,7 @@ export default function AudiobookGenerator() {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/msword",
       ];
-      
+
       if (validTypes.includes(file.type)) {
         setSelectedFile(file);
         setError(null);
@@ -191,9 +191,60 @@ export default function AudiobookGenerator() {
     }
   };
 
+  const handleCloseApplication = async () => {
+    // Confirmar antes de fechar
+    const confirmClose = window.confirm("Tem certeza que deseja fechar o aplicativo?");
+    if (!confirmClose) return;
+
+    try {
+      // Mostrar mensagem imediatamente
+      alert("Fechando aplicativo... A página será fechada automaticamente em alguns segundos.");
+      
+      // Chamar o endpoint de shutdown do backend
+      fetch(`${API_BASE_URL}/shutdown`, {
+        method: "POST",
+      }).catch(() => {
+        // Ignorar erros - o backend pode já ter parado
+      });
+      
+      // Fechar o frontend após 4 segundos (tempo suficiente para o backend parar)
+      setTimeout(() => {
+        // Tentar fechar a aba do navegador
+        window.close();
+        
+        // Se não conseguir fechar a aba, mostrar mensagem após um tempo
+        setTimeout(() => {
+          alert("Aplicativo foi fechado. Você pode fechar esta aba manualmente se ela não fechou automaticamente.");
+        }, 1000);
+      }, 4000);
+      
+    } catch (err) {
+      // Se der erro na requisição, ainda assim fechar o frontend
+      setTimeout(() => {
+        window.close();
+        setTimeout(() => {
+          alert("Aplicativo foi fechado. Você pode fechar esta aba manualmente.");
+        }, 1000);
+      }, 3000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Botão Fechar Aplicativo no topo */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={handleCloseApplication}
+            variant="destructive"
+            size="lg"
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 shadow-lg"
+          >
+            <Power className="mr-2 h-5 w-5" />
+            Fechar Aplicativo
+          </Button>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             🔊 Audiobook Generator
