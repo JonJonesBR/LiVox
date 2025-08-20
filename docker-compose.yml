@@ -1,0 +1,30 @@
+services:
+  audiobook-backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/audiobooks:/app/audiobooks
+      - ./backend/static:/app/static
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # Frontend será servido pelo Next.js existente
+  # Para desenvolvimento, você pode executar o Next.js separadamente
+
+  audiobook-frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - audiobook-backend
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  audiobooks:
+  static:
