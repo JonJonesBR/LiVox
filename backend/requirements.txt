@@ -1,0 +1,13 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+PyPDF2==3.0.1
+python-docx==1.1.0
+EbookLib==0.18
+beautifulsoup4==4.12.2
+edge-tts==7.2.0
+python-multipart==0.0.6
+nest-asyncio==1.6.0
+num2words==0.5.12
+chardet==5.2.0
+html2text==2020.1.16
+aiohttp==3.9.1
