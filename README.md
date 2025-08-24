@@ -114,6 +114,37 @@ Você também pode iniciar os serviços separadamente:
 ./start-frontend.bat
 ```
 
+### 5. Empacotamento e Distribuição
+
+Para distribuir o Audiobook Generator como um pacote executável, existem várias opções disponíveis no diretório `packaging/`:
+
+#### Opção 1: Script Auto-extrator Simples
+
+O método mais simples usa um script batch que copia os arquivos e inicia o aplicativo:
+
+1. Execute `packaging\simple-extractor.bat` como administrador
+2. O script copiará os arquivos para um diretório temporário e iniciará o aplicativo
+
+#### Opção 2: Instalador Profissional (NSIS)
+
+Para criar um instalador profissional:
+
+1. Instale o NSIS (Nullsoft Scriptable Install System)
+2. Execute o comando: `makensis packaging\installer.nsi`
+3. O instalador `AudiobookGeneratorInstaller.exe` será criado
+
+Mais detalhes estão disponíveis em `packaging\README-NSIS.md`.
+
+#### Opção 3: Pacote Auto-extrator (IExpress)
+
+Para criar um pacote auto-extrator usando a ferramenta IExpress do Windows:
+
+1. Execute o PowerShell como administrador
+2. Navegue até o diretório `packaging`
+3. Execute: `.\build-iexpress.ps1 -OutputExe ..\audiobook-local-runner.exe`
+
+Mais detalhes estão disponíveis em `packaging\README.md`.
+
 ### 4. Desenvolvimento Local
 
 #### Backend
