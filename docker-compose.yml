@@ -12,13 +12,10 @@ services:
       - PYTHONUNBUFFERED=1
     restart: "no"
 
-  # Frontend será servido pelo Next.js existente
-  # Para desenvolvimento, você pode executar o Next.js separadamente
-
   audiobook-frontend:
     build:
       context: .
-      dockerfile: ./frontend/Dockerfile
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     depends_on:
