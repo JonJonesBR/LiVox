@@ -1,34 +1,20 @@
 {
   "pages": {
-    "/_not-found": [
-      "static/chunks/webpack-f43c1b8ab05411b2.js",
-      "static/chunks/fd9d1056-f84b4133af10a9d6.js",
-      "static/chunks/472-6da5a71e2449928e.js",
-      "static/chunks/main-app-f8d00ad0db1eda1a.js",
-      "static/chunks/app/_not-found-b8ca7972db22cd62.js"
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
     ],
     "/layout": [
-      "static/chunks/webpack-f43c1b8ab05411b2.js",
-      "static/chunks/fd9d1056-f84b4133af10a9d6.js",
-      "static/chunks/472-6da5a71e2449928e.js",
-      "static/chunks/main-app-f8d00ad0db1eda1a.js",
-      "static/css/31af8ace23de03ad.css",
-      "static/chunks/app/layout-7b5a5117aabcc0fd.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
     "/audiobook/page": [
-      "static/chunks/webpack-f43c1b8ab05411b2.js",
-      "static/chunks/fd9d1056-f84b4133af10a9d6.js",
-      "static/chunks/472-6da5a71e2449928e.js",
-      "static/chunks/main-app-f8d00ad0db1eda1a.js",
-      "static/chunks/615-28f0a3bb247dd26b.js",
-      "static/chunks/app/audiobook/page-bbb7aae6465bab01.js"
-    ],
-    "/page": [
-      "static/chunks/webpack-f43c1b8ab05411b2.js",
-      "static/chunks/fd9d1056-f84b4133af10a9d6.js",
-      "static/chunks/472-6da5a71e2449928e.js",
-      "static/chunks/main-app-f8d00ad0db1eda1a.js",
-      "static/chunks/app/page-16ff2ab1176605dd.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/audiobook/page.js"
     ]
   }
 }

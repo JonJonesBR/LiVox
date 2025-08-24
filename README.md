@@ -34,6 +34,7 @@ O aplicativo é dividido em duas partes principais:
 - Docker e Docker Compose
 - Node.js 18+ (para desenvolvimento do frontend)
 - Python 3.11+ (para desenvolvimento local do backend)
+- FFmpeg (será instalado automaticamente se não encontrado)
 
 ### 1. Clonar o Repositório
 
@@ -69,6 +70,50 @@ Este script irá:
 ./stop.sh
 ```
 
+### 4. Executar Localmente (Sem Docker)
+
+Se preferir executar o aplicativo localmente sem depender do Docker, você pode usar os scripts fornecidos:
+
+#### Iniciar o Ambiente Local
+
+```bash
+./start-local.bat
+```
+
+Este script irá:
+- Verificar e instalar automaticamente o FFmpeg se necessário
+- Criar e ativar um ambiente virtual Python
+- Instalar todas as dependências necessárias
+- Iniciar o backend (API) na porta 8000
+- Iniciar o frontend (Next.js) na porta 3000
+- Abrir o navegador automaticamente
+
+> **Nota**: Se o FFmpeg não estiver instalado, o script tentará instalá-lo automaticamente. Se a instalação automática falhar, instruções manuais serão fornecidas.
+
+#### Parar o Ambiente Local
+
+```bash
+./stop-local.bat
+```
+
+Este script irá:
+- Fornecer instruções para fechar os terminais do backend e frontend
+- Orientar sobre como verificar processos remanescentes
+
+#### Iniciar Backend e Frontend Separadamente
+
+Você também pode iniciar os serviços separadamente:
+
+**Backend (API):**
+```bash
+./start-backend.bat
+```
+
+**Frontend (Interface):**
+```bash
+./start-frontend.bat
+```
+
 ### 4. Desenvolvimento Local
 
 #### Backend
@@ -88,6 +133,15 @@ O frontend agora usa o `package.json` na raiz do projeto. Para desenvolvê-lo:
 ```bash
 npm run dev
 ```
+
+#### Scripts Automatizados
+
+Para facilitar o desenvolvimento local, foram criados scripts automatizados:
+
+- `start-local.bat`: Inicia ambos os serviços (backend e frontend)
+- `start-backend.bat`: Inicia apenas o backend
+- `start-frontend.bat`: Inicia apenas o frontend
+- `stop-local.bat`: Fornece instruções para parar os serviços
 
 ## 📖 Como Usar
 
@@ -213,9 +267,13 @@ O frontend usa:
 - Verifique as permissões do diretório de uploads
 
 #### Áudio não é gerado
-- Verifique se o FFmpeg está instalado
+- Verifique se o FFmpeg está instalado (obrigatório para modo local)
 - Confirme se há espaço em disco suficiente
 - Verifique os logs do backend para erros
+
+#### Erro "Falha ao unificar partes do áudio"
+- Este erro ocorre quando o FFmpeg não está instalado ou não está no PATH
+- Siga as instruções em `FFMPEG-INSTALL.md` para instalar corretamente
 
 ### Logs
 
@@ -230,6 +288,17 @@ Para ver os logs do frontend:
 ```bash
 docker-compose logs -f frontend
 ```
+
+Para ver os logs do backend em modo local:
+- Os logs são exibidos diretamente no terminal onde o backend está sendo executado
+
+### Verificação de Dependências
+
+Antes de executar o programa localmente, verifique se todas as dependências estão instaladas:
+
+1. **Python 3.11+**: `python --version`
+2. **Node.js 18+**: `node --version`
+3. **FFmpeg**: `ffmpeg -version`
 
 ## 🤝 Contribuindo
 

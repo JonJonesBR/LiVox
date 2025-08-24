@@ -31,36 +31,62 @@ O aplicativo Audiobook Generator foi completamente reestruturado e melhorado par
    - Melhor tratamento de erros
    - Otimizações de performance
 
+6. **🛠️ Suporte a Execução Local**
+   - Scripts automatizados para Windows
+   - Verificação e instalação automática de dependências (FFmpeg)
+   - Instruções detalhadas para instalação do FFmpeg
+
 ## 🚀 Como Usar
 
-### Opção 1: Desenvolvimento Local
+### Opção 1: Desenvolvimento Local (Scripts Automatizados)
+
+#### Iniciar Tudo Automaticamente
+```bash
+cd C:\Users\Micro\Desktop\audiobook-generator
+start-local.bat
+```
+
+Este script irá iniciar ambos os serviços (backend e frontend) e abrir o navegador automaticamente.
+
+#### Iniciar Serviços Separadamente
+
+**Backend:**
+```bash
+cd C:\Users\Micro\Desktop\audiobook-generator
+start-backend.bat
+```
+
+**Frontend:**
+```bash
+cd C:\Users\Micro\Desktop\audiobook-generator
+start-frontend.bat
+```
+
+Acesse: http://localhost:3000/audiobook
+
+### Opção 2: Desenvolvimento Local (Comandos Manuais)
 
 #### Backend
 ```bash
-cd /home/z/my-project/audiobook-generator/backend
-pip3 install --break-system-packages -r requirements.txt
-export PATH=$PATH:/home/z/.local/bin
-python3 main.py
+cd C:\Users\Micro\Desktop\audiobook-generator\backend
+pip install -r requirements.txt
+python main.py
 ```
 
 #### Frontend
 ```bash
-cd /home/z/my-project
+cd C:\Users\Micro\Desktop\audiobook-generator
 npm run dev
 ```
 
 Acesse: http://localhost:3000/audiobook
 
-### Opção 2: Docker (Recomendado)
+### Opção 3: Docker (Recomendado)
 
 ```bash
-cd /home/z/my-project/audiobook-generator
-# Iniciar o backend
+cd C:\Users\Micro\Desktop\audiobook-generator
+# Iniciar o backend e frontend com Docker
 docker-compose up -d
-
-# Iniciar o frontend
-cd /home/z/my-project
-npm run dev
 ```
 
 ## 📁 Estrutura do Projeto
@@ -94,6 +120,7 @@ npm run dev
 - ✅ Progresso em tempo real
 - ✅ Download automático
 - ✅ Suporte a Docker
+- ✅ Execução local sem Docker (com scripts automatizados)
 - ✅ Documentação completa
 
 ## 🧪 Testes Realizados
@@ -125,6 +152,7 @@ O aplicativo está pronto para ser implantado em:
 3. **Configurar domínio personalizado**
 4. **Adicionar monitoramento** e logging
 5. **Otimizar para produção** (compressão, cache, etc.)
+6. **Verificar instalação do FFmpeg** se estiver usando modo local
 
 ## 🎊 Conclusão
 
