@@ -422,7 +422,9 @@ async def get_text_from_file(file_path: str, task_id: str):
 
         elif filename.endswith('.txt'):
             file_content = open(file_path, 'rb').read()
-            if isinstance(file_content, bytes) and file_content: # Ensure it's bytes and not empty
+            if not file_content:
+                file_content = b''
+            if isinstance(file_content, bytes) and len(file_content) > 0:
                 detected_encoding = chardet.detect(file_content)['encoding']
                 text = file_content.decode(detected_encoding or 'utf-8', errors='replace')
             else:
@@ -481,8 +483,21 @@ def _extrair_texto_de_epub_helper(caminho_epub: str) -> str:
         for item in items:
             try:
                 html_bytes = item.get_content()
-                encoding = chardet.detect(html_bytes)['encoding'] or 'utf-8'
-                html = html_bytes.decode(encoding, errors='replace')
+                # Garantir que html_bytes seja do tipo bytes
+                if not isinstance(html_bytes, (bytes, bytearray)):
+                    try:
+                        html_bytes = str(html_bytes).encode('utf-8', errors='replace')
+                    except Exception:
+                        html_bytes = b''
+
+                if html_bytes:
+                    encoding = chardet.detect(html_bytes).get('encoding') or 'utf-8'
+                    try:
+                        html = html_bytes.decode(encoding, errors='replace')
+                    except Exception:
+                        html = html_bytes.decode('utf-8', errors='replace')
+                else:
+                    html = ''
 
                 soup = BeautifulSoup(html, 'html.parser')
                 for tag in soup(['nav', 'header', 'footer', 'style', 'script', 'figure', 'figcaption', 'aside', 'link', 'meta']):
@@ -942,45 +957,59 @@ async def perform_conversion_task(file_path: str, voice: str, task_id: str, use_
             except Exception as e_rmdir:
                 logger.warning(f"⚠️ Erro ao remover diretório de chunks temporários: {e_rmdir}")
 
+
 @app.post("/shutdown")
 async def shutdown_application():
-    """Endpoint para fechar a aplicação."""
-    import asyncio
-    import subprocess
-    import sys
-    
-    logger.info("🛑 Recebida solicitação de shutdown da aplicação...")
-    
-    # Função para fazer shutdown após responder ao cliente
-    async def perform_shutdown():
-        await asyncio.sleep(1)  # Aguardar 1 segundo para resposta chegar ao cliente
-        
+    """Endpoint para sinalizar shutdown criando arquivo shutdown.flag."""
+    try:
+        with open("../shutdown.flag", "w") as f:
+            f.write("shutdown")
+        logger.info("🛑 Arquivo shutdown.flag criado.")
+
+        # Tentar executar stop-local.bat automaticamente (caso start-local.bat nao esteja monitorando)
         try:
-            logger.info("🛑 Parando todos os containers do projeto...")
-            
-            # Parar container na porta 3000 (frontend)
-            result_3000 = subprocess.run([
-                "sh", "-c", "docker stop $(docker ps -q --filter 'publish=3000') 2>/dev/null || true"
-            ], capture_output=True, timeout=5)
-            
-            # Parar container na porta 8000 (backend) 
-            result_8000 = subprocess.run([
-                "sh", "-c", "docker stop $(docker ps -q --filter 'publish=8000') 2>/dev/null || true"
-            ], capture_output=True, timeout=5)
-            
-            logger.info("🛑 Comandos de parada executados via Docker CLI")
-            
-        except Exception as e:
-            logger.warning(f"⚠️ Erro ao parar containers via Docker: {e}")
-        
-        # Parar o processo atual
-        logger.info("🛑 Parando processo do backend...")
-        sys.exit(0)
-    
-    # Agendar o shutdown
-    asyncio.create_task(perform_shutdown())
-    
-    return JSONResponse({"message": "Aplicação será fechada em alguns segundos..."})
+            project_root = Path(__file__).resolve().parent.parent
+            stop_script = project_root / "stop-local.bat"
+            if stop_script.exists():
+                logger.info(f"🛑 Tentando executar {stop_script} para encerrar serviços...")
+                # Executa o script em background via cmd
+                subprocess.Popen(["cmd", "/c", str(stop_script)], cwd=str(project_root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                logger.warning(f"Arquivo de parada nao encontrado: {stop_script}")
+        except Exception as e_run:
+            logger.warning(f"Erro ao tentar executar stop-local.bat automaticamente: {e_run}")
+
+        # Tentativa adicional: encerrar processos que estejam escutando nas portas 8000 e 3000 (Windows)
+        try:
+            import platform
+            if platform.system().lower().startswith("win"):
+                logger.info("🛑 Tentando identificar processos nas portas 8000/3000 e finalizá-los (Windows)...")
+                try:
+                    netstat_out = subprocess.check_output("netstat -ano", shell=True, stderr=subprocess.DEVNULL)
+                    netstat_text = netstat_out.decode(errors='ignore')
+                    for port in (8000, 3000):
+                        for line in netstat_text.splitlines():
+                            if f":{port} " in line or f":{port}\t" in line or f":{port}" in line:
+                                parts = line.split()
+                                if parts:
+                                    pid = parts[-1]
+                                    if pid.isdigit():
+                                        try:
+                                            subprocess.run(["taskkill", "/PID", pid, "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                            logger.info(f"🛑 Finalizado PID {pid} que atendia porta {port}")
+                                        except Exception as e_kill:
+                                            logger.warning(f"Erro ao finalizar PID {pid}: {e_kill}")
+                except Exception as e_net:
+                    logger.warning(f"Erro ao executar netstat/taskkill: {e_net}")
+            else:
+                logger.info("🛑 Sistema nao-Windows detectado; pulando tentativa automatica de taskkill.")
+        except Exception as e_extra:
+            logger.warning(f"Erro na tentativa adicional de finalizacao de portas: {e_extra}")
+
+        return JSONResponse({"message": "Sinal de desligamento enviado. Encerramento em andamento."})
+    except Exception as e:
+        logger.error(f"Erro ao criar arquivo shutdown.flag: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao sinalizar desligamento.")
 
 if __name__ == "__main__":
     import uvicorn
