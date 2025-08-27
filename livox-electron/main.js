@@ -79,12 +79,20 @@ const startBackend = () => {
   const isPackaged = app.isPackaged;
   const useDevPaths = !isPackaged && fs.existsSync(backendPath);
   
-  const finalPythonPath = useDevPaths ? devPythonPath : pythonPath;
+  let finalPythonPath = useDevPaths ? devPythonPath : pythonPath;
   const finalScriptPath = useDevPaths ? devScriptPath : scriptPath;
 
   // Set the working directory and PYTHONPATH
   const cwd = useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend');
   const pythonPathEnv = useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend');
+
+  console.log('App is packaged:', isPackaged);
+  console.log('Using dev paths:', useDevPaths);
+  console.log('Backend path:', backendPath);
+  console.log('Python path:', finalPythonPath);
+  console.log('Script path:', finalScriptPath);
+  console.log('Working directory:', cwd);
+  console.log('PYTHONPATH:', pythonPathEnv);
 
   // Verify that the Python executable exists
   if (!fs.existsSync(finalPythonPath)) {
@@ -92,7 +100,7 @@ const startBackend = () => {
     // Try alternative paths
     const alternativePaths = [
       path.join(process.resourcesPath, 'backend', 'venv', 'Scripts', 'python.exe'),
-      path.join(process.resourcesPath, 'backend', 'venv', 'bin', 'python.exe')
+      path.join(process.resourcesPath, 'backend', 'venv', 'bin', 'python')
     ];
     
     for (const altPath of alternativePaths) {
@@ -106,14 +114,24 @@ const startBackend = () => {
     // If still not found, show an error
     if (!fs.existsSync(finalPythonPath)) {
       console.error('Python executable not found. Backend will not start.');
-      return;
+      // Tentar usar python do sistema
+      finalPythonPath = 'python';
+      console.log('Trying to use system python');
     }
   }
 
   // Verify that the script exists
   if (!fs.existsSync(finalScriptPath)) {
     console.error('Script not found at:', finalScriptPath);
-    return;
+    // Tentar caminho alternativo para apps empacotados
+    const altScriptPath = path.join(process.resourcesPath, 'app', 'backend', 'main.py');
+    if (fs.existsSync(altScriptPath)) {
+      console.log('Found script at alternative path:', altScriptPath);
+      finalScriptPath = altScriptPath;
+    } else {
+      console.error('Script not found at alternative path either');
+      return;
+    }
   }
 
   console.log('Starting backend with Python path:', finalPythonPath);
@@ -125,6 +143,23 @@ const startBackend = () => {
     cwd: cwd,
     env: { ...process.env, PYTHONPATH: pythonPathEnv }
   });
+  
+  backendProcess.stdout.on('data', (data) => {
+    console.log(`Backend stdout: ${data}`);
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    console.error(`Backend stderr: ${data}`);
+  });
+
+  backendProcess.on('close', (code) => {
+    console.log(`Backend process exited with code ${code}`);
+  });
+  
+  backendProcess.on('error', (error) => {
+    console.error('Failed to start backend process:', error);
+  });
+};
 
   backendProcess.stdout.on('data', (data) => {
     console.log(`Backend stdout: ${data}`);
@@ -151,6 +186,12 @@ const startStaticServer = () => {
   }
   
   console.log('Serving static files from:', staticPath);
+  
+  // Adicionar middleware para log de todas as requisições
+  app.use((req, res, next) => {
+    console.log('Request:', req.method, req.url);
+    next();
+  });
   
   // Servir arquivos estáticos com cabeçalhos corretos
   app.use(express.static(staticPath, {
@@ -184,12 +225,25 @@ const startStaticServer = () => {
         }
         
         console.log('index.html content length:', data.length);
+        // Verificar se o conteúdo é válido
+        if (data.length === 0) {
+          console.error('index.html is empty');
+          res.status(500).send('index.html is empty');
+          return;
+        }
+        
         res.setHeader('Content-Type', 'text/html; charset=UTF-8');
         res.send(data);
       });
     } else {
       console.error('index.html not found at:', indexPath);
-      res.status(404).send('index.html not found');
+      // Tentar servir o arquivo _not-found.html como fallback
+      const notFoundPath = path.join(staticPath, 'server', 'app', '_not-found.html');
+      if (fs.existsSync(notFoundPath)) {
+        res.sendFile(notFoundPath);
+      } else {
+        res.status(404).send('index.html not found');
+      }
     }
   });
   
@@ -200,12 +254,36 @@ const startStaticServer = () => {
     console.error('Server error:', error);
   });
   
-  server.listen(3000, () => {
-    console.log('Static server running on http://localhost:3000');
+  // Verificar se a porta está disponível
+  server.on('listening', () => {
+    const addr = server.address();
+    console.log('Static server listening on port', addr.port);
+  });
+  
+  server.listen(3000, '127.0.0.1', () => {
+    console.log('Static server running on http://127.0.0.1:3000');
+    
+    // Testar se o servidor está respondendo
+    setTimeout(() => {
+      const http = require('http');
+      const testReq = http.get('http://127.0.0.1:3000', (res) => {
+        console.log('Test request status code:', res.statusCode);
+        res.on('data', (chunk) => {
+          console.log('Test request response length:', chunk.length);
+        });
+      }).on('error', (err) => {
+        console.error('Test request error:', err.message);
+      });
+      
+      testReq.setTimeout(5000, () => {
+        testReq.abort();
+        console.log('Test request timeout');
+      });
+    }, 1000);
     
     // Garantir que a janela seja criada após o servidor estar pronto
     if (mainWindow) {
-      mainWindow.loadURL(`http://localhost:3000`);
+      mainWindow.loadURL(`http://127.0.0.1:3000`);
       mainWindow.show();
       
       // Adicionar listener para erros de carregamento
@@ -221,13 +299,18 @@ const startStaticServer = () => {
           console.log('Document body length:', document.body ? document.body.innerHTML.length : 0);
         `);
       });
+      
+      // Adicionar listener para erros na console do navegador
+      mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+        console.log('Console message:', level, message, 'at line', line, 'in', sourceId);
+      });
     }
   });
   
   // Timeout para mostrar a janela mesmo se o servidor demorar
   setTimeout(() => {
     if (mainWindow && !mainWindow.isVisible()) {
-      mainWindow.loadURL(`http://localhost:3000`);
+      mainWindow.loadURL(`http://127.0.0.1:3000`);
       mainWindow.show();
     }
   }, 5000);
