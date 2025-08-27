@@ -161,18 +161,6 @@ const startBackend = () => {
   });
 };
 
-  backendProcess.stdout.on('data', (data) => {
-    console.log(`Backend stdout: ${data}`);
-  });
-
-  backendProcess.stderr.on('data', (data) => {
-    console.error(`Backend stderr: ${data}`);
-  });
-
-  backendProcess.on('close', (code) => {
-    console.log(`Backend process exited with code ${code}`);
-  });
-
 // Start a simple Express server to serve static files
 const startStaticServer = () => {
   const app = express();
