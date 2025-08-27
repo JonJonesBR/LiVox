@@ -180,6 +180,13 @@ const startStaticServer = () => {
     next();
   });
   
+  // Servir arquivos estáticos da pasta static primeiro
+  const staticAssetsPath = path.join(staticPath, 'static');
+  if (fs.existsSync(staticAssetsPath)) {
+    console.log('Serving static assets from:', staticAssetsPath);
+    app.use('/_next/static', express.static(path.join(staticAssetsPath)));
+  }
+  
   // Servir arquivos estáticos com cabeçalhos corretos
   app.use(express.static(staticPath, {
     setHeaders: (res, filePath) => {
@@ -189,15 +196,17 @@ const startStaticServer = () => {
     }
   }));
   
-  // Servir arquivos estáticos da pasta static explicitamente
-  const staticAssetsPath = path.join(staticPath, 'static');
-  if (fs.existsSync(staticAssetsPath)) {
-    console.log('Serving static assets from:', staticAssetsPath);
-    app.use('/static', express.static(staticAssetsPath));
-  }
-  
   // Serve index.html for all routes (for client-side routing)
   app.get('*', (req, res) => {
+    // Primeiro verificar se é um arquivo estático
+    const staticFilePath = path.join(staticPath, req.url);
+    if (fs.existsSync(staticFilePath) && fs.statSync(staticFilePath).isFile()) {
+      // Servir o arquivo estático diretamente
+      res.sendFile(staticFilePath);
+      return;
+    }
+    
+    // Se não for um arquivo estático, servir o index.html para client-side routing
     const indexPath = path.join(staticPath, 'server', 'app', 'index.html');
     console.log('Serving index.html from:', indexPath);
     
