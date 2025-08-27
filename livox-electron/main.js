@@ -152,8 +152,14 @@ const startStaticServer = () => {
   
   console.log('Serving static files from:', staticPath);
   
-  // Servir arquivos estáticos
-  app.use(express.static(staticPath));
+  // Servir arquivos estáticos com cabeçalhos corretos
+  app.use(express.static(staticPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+      }
+    }
+  }));
   
   // Servir arquivos estáticos da pasta static explicitamente
   const staticAssetsPath = path.join(staticPath, 'static');
@@ -169,7 +175,18 @@ const startStaticServer = () => {
     
     // Verificar se o arquivo index.html existe
     if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
+      // Ler o conteúdo do arquivo e enviá-lo com o tipo de conteúdo correto
+      fs.readFile(indexPath, 'utf8', (err, data) => {
+        if (err) {
+          console.error('Error reading index.html:', err);
+          res.status(500).send('Error reading index.html');
+          return;
+        }
+        
+        console.log('index.html content length:', data.length);
+        res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        res.send(data);
+      });
     } else {
       console.error('index.html not found at:', indexPath);
       res.status(404).send('index.html not found');
@@ -194,6 +211,15 @@ const startStaticServer = () => {
       // Adicionar listener para erros de carregamento
       mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
         console.error('Failed to load URL:', validatedURL, 'Error:', errorCode, errorDescription);
+      });
+      
+      // Adicionar listener para quando a página terminar de carregar
+      mainWindow.webContents.on('did-finish-load', () => {
+        console.log('Page finished loading');
+        mainWindow.webContents.executeJavaScript(`
+          console.log('Document title:', document.title);
+          console.log('Document body length:', document.body ? document.body.innerHTML.length : 0);
+        `);
       });
     }
   });
