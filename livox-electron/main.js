@@ -58,21 +58,61 @@ const startBackend = () => {
     path.join(process.resourcesPath, 'backend', 'venv', 'Scripts', 'python.exe') :
     path.join(process.resourcesPath, 'backend', 'venv', 'bin', 'python');
     
-  const scriptPath = process.platform === 'win32' ?
-    path.join(process.resourcesPath, 'backend', 'main.py') :
-    path.join(process.resourcesPath, 'backend', 'main.py');
+  const scriptPath = path.join(process.resourcesPath, 'backend', 'main.py');
 
   // For development, use local paths
   const devPythonPath = path.join(backendPath, 'venv', process.platform === 'win32' ? 'Scripts' : 'bin', 'python.exe');
   const devScriptPath = path.join(backendPath, 'main.py');
   
-  const useDevPaths = fs.existsSync(backendPath);
+  // Check if we're running in a packaged app
+  const isPackaged = app.isPackaged;
+  const useDevPaths = !isPackaged && fs.existsSync(backendPath);
+  
   const finalPythonPath = useDevPaths ? devPythonPath : pythonPath;
   const finalScriptPath = useDevPaths ? devScriptPath : scriptPath;
 
+  // Set the working directory and PYTHONPATH
+  const cwd = useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend');
+  const pythonPathEnv = useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend');
+
+  // Verify that the Python executable exists
+  if (!fs.existsSync(finalPythonPath)) {
+    console.error('Python executable not found at:', finalPythonPath);
+    // Try alternative paths
+    const alternativePaths = [
+      path.join(process.resourcesPath, 'backend', 'venv', 'Scripts', 'python.exe'),
+      path.join(process.resourcesPath, 'backend', 'venv', 'bin', 'python.exe')
+    ];
+    
+    for (const altPath of alternativePaths) {
+      if (fs.existsSync(altPath)) {
+        console.log('Found Python executable at alternative path:', altPath);
+        finalPythonPath = altPath;
+        break;
+      }
+    }
+    
+    // If still not found, show an error
+    if (!fs.existsSync(finalPythonPath)) {
+      console.error('Python executable not found. Backend will not start.');
+      return;
+    }
+  }
+
+  // Verify that the script exists
+  if (!fs.existsSync(finalScriptPath)) {
+    console.error('Script not found at:', finalScriptPath);
+    return;
+  }
+
+  console.log('Starting backend with Python path:', finalPythonPath);
+  console.log('Script path:', finalScriptPath);
+  console.log('Working directory:', cwd);
+  console.log('PYTHONPATH:', pythonPathEnv);
+
   backendProcess = spawn(finalPythonPath, [finalScriptPath], {
-    cwd: useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend'),
-    env: { ...process.env, PYTHONPATH: useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend') }
+    cwd: cwd,
+    env: { ...process.env, PYTHONPATH: pythonPathEnv }
   });
 
   backendProcess.stdout.on('data', (data) => {
