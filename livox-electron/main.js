@@ -172,7 +172,6 @@ const startBackend = () => {
   backendProcess.on('close', (code) => {
     console.log(`Backend process exited with code ${code}`);
   });
-};
 
 // Start a simple Express server to serve static files
 const startStaticServer = () => {
