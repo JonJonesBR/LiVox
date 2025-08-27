@@ -1,4 +1,4 @@
-# 🔊 Audiobook Generator
+# 🔊 LiVox
 
 Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta qualidade usando tecnologia de ponta.
 
