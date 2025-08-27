@@ -32,13 +32,28 @@ const createWindow = () => {
     show: false // Initially hide the window
   });
 
-  // Wait for the server to start before loading the URL
+  // Wait for the page to finish loading before showing the window
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.show();
   });
 
-  // Load the static files
-  mainWindow.loadURL(`http://localhost:3000`);
+  // Load the static files directly from the file system
+  const indexPath = path.join(__dirname, 'build', 'server', 'app', 'index.html');
+  console.log('Loading index.html from:', indexPath);
+  
+  if (fs.existsSync(indexPath)) {
+    mainWindow.loadFile(indexPath);
+  } else {
+    console.error('index.html not found at:', indexPath);
+    // Tentar carregar o arquivo _not-found.html como fallback
+    const notFoundPath = path.join(__dirname, 'build', 'server', 'app', '_not-found.html');
+    if (fs.existsSync(notFoundPath)) {
+      mainWindow.loadFile(notFoundPath);
+    } else {
+      // Mostrar uma página de erro simples
+      mainWindow.loadURL('data:text/html,<h1>Error: index.html not found</h1>');
+    }
+  }
 
   // Open external links in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -48,15 +63,21 @@ const createWindow = () => {
 
   // Handle navigation to external URLs
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('http://localhost:3000')) {
+    // Permitir navegação para URLs relativas (para client-side routing)
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return;
+    }
+    
+    // Abrir links externos no navegador padrão
+    if (!url.startsWith('file://')) {
       event.preventDefault();
       shell.openExternal(url);
     }
   });
 
   // Handle errors
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Failed to load:', errorCode, errorDescription);
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('Failed to load:', validatedURL, errorCode, errorDescription);
   });
 };
 
@@ -363,7 +384,6 @@ const killBackend = () => {
 app.whenReady().then(() => {
   createWindow();
   startBackend();
-  startStaticServer();
 
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
