@@ -28,7 +28,13 @@ const createWindow = () => {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'icon.ico')
+    icon: path.join(__dirname, 'icon.ico'),
+    show: false // Initially hide the window
+  });
+
+  // Wait for the server to start before loading the URL
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.show();
   });
 
   // Load the static files
@@ -46,6 +52,11 @@ const createWindow = () => {
       event.preventDefault();
       shell.openExternal(url);
     }
+  });
+
+  // Handle errors
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorCode, errorDescription);
   });
 };
 
@@ -133,6 +144,12 @@ const startStaticServer = () => {
   const app = express();
   const staticPath = path.join(__dirname, 'build');
   
+  // Verificar se o diretório de build existe
+  if (!fs.existsSync(staticPath)) {
+    console.error('Build directory not found at:', staticPath);
+    return;
+  }
+  
   app.use(express.static(staticPath));
   
   // Serve index.html for all routes (for client-side routing)
@@ -141,9 +158,29 @@ const startStaticServer = () => {
   });
   
   server = http.createServer(app);
+  
+  // Adicionar tratamento de erros ao servidor
+  server.on('error', (error) => {
+    console.error('Server error:', error);
+  });
+  
   server.listen(3000, () => {
     console.log('Static server running on http://localhost:3000');
+    
+    // Garantir que a janela seja criada após o servidor estar pronto
+    if (mainWindow) {
+      mainWindow.loadURL(`http://localhost:3000`);
+      mainWindow.show();
+    }
   });
+  
+  // Timeout para mostrar a janela mesmo se o servidor demorar
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      mainWindow.loadURL(`http://localhost:3000`);
+      mainWindow.show();
+    }
+  }, 5000);
 };
 
 // Kill backend process when app quits
@@ -160,10 +197,9 @@ const killBackend = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  createWindow();
   startBackend();
   startStaticServer();
-  
-  createWindow();
 
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
