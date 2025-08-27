@@ -150,11 +150,30 @@ const startStaticServer = () => {
     return;
   }
   
+  console.log('Serving static files from:', staticPath);
+  
+  // Servir arquivos estáticos
   app.use(express.static(staticPath));
+  
+  // Servir arquivos estáticos da pasta static explicitamente
+  const staticAssetsPath = path.join(staticPath, 'static');
+  if (fs.existsSync(staticAssetsPath)) {
+    console.log('Serving static assets from:', staticAssetsPath);
+    app.use('/static', express.static(staticAssetsPath));
+  }
   
   // Serve index.html for all routes (for client-side routing)
   app.get('*', (req, res) => {
-    res.sendFile(path.join(staticPath, 'server', 'app', 'index.html'));
+    const indexPath = path.join(staticPath, 'server', 'app', 'index.html');
+    console.log('Serving index.html from:', indexPath);
+    
+    // Verificar se o arquivo index.html existe
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error('index.html not found at:', indexPath);
+      res.status(404).send('index.html not found');
+    }
   });
   
   server = http.createServer(app);
@@ -171,6 +190,11 @@ const startStaticServer = () => {
     if (mainWindow) {
       mainWindow.loadURL(`http://localhost:3000`);
       mainWindow.show();
+      
+      // Adicionar listener para erros de carregamento
+      mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        console.error('Failed to load URL:', validatedURL, 'Error:', errorCode, errorDescription);
+      });
     }
   });
   
