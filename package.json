@@ -1,14 +1,24 @@
 {
-  "name": "frontend",
+  "name": "livox",
   "version": "0.1.0",
   "private": true,
+  "description": "Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta qualidade usando tecnologia de ponta.",
+  "main": "main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "electron": "electron .",
+    "electron:build": "electron-builder",
+    "electron:build:win": "electron-builder --win",
+    "electron:build:linux": "electron-builder --linux",
+    "electron:build:mac": "electron-builder --mac"
   },
+  "author": "LiVox Team",
+  "license": "MIT",
   "dependencies": {
+    "@next/swc-win32-x64-msvc": "^15.5.2",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.0.0",
@@ -28,6 +38,9 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "electron": "^37.3.1",
+    "electron-builder": "^26.0.12",
+    "electron-squirrel-startup": "^1.0.0",
     "eslint": "^8",
     "eslint-config-next": "14.0.3",
     "postcss": "^8",
