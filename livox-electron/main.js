@@ -174,6 +174,31 @@ const startStaticServer = () => {
   
   console.log('Serving static files from:', staticPath);
   
+  // Listar o conteúdo do diretório de build para depuração
+  console.log('Build directory contents:');
+  try {
+    const buildContents = fs.readdirSync(staticPath);
+    console.log(buildContents);
+    
+    // Listar o conteúdo da pasta static se existir
+    const staticAssetsPath = path.join(staticPath, 'static');
+    if (fs.existsSync(staticAssetsPath)) {
+      console.log('Static assets directory contents:');
+      const staticContents = fs.readdirSync(staticAssetsPath);
+      console.log(staticContents);
+      
+      // Listar o conteúdo da pasta _next dentro de static
+      const nextAssetsPath = path.join(staticAssetsPath, '_next');
+      if (fs.existsSync(nextAssetsPath)) {
+        console.log('_next directory contents:');
+        const nextContents = fs.readdirSync(nextAssetsPath);
+        console.log(nextContents);
+      }
+    }
+  } catch (err) {
+    console.error('Error reading directory contents:', err);
+  }
+  
   // Adicionar middleware para log de todas as requisições
   app.use((req, res, next) => {
     console.log('Request:', req.method, req.url);
@@ -184,7 +209,10 @@ const startStaticServer = () => {
   const staticAssetsPath = path.join(staticPath, 'static');
   if (fs.existsSync(staticAssetsPath)) {
     console.log('Serving static assets from:', staticAssetsPath);
-    app.use('/_next/static', express.static(path.join(staticAssetsPath)));
+    app.use('/_next/static', express.static(staticAssetsPath, {
+      maxAge: '1y',
+      etag: false
+    }));
   }
   
   // Servir arquivos estáticos com cabeçalhos corretos
@@ -193,14 +221,21 @@ const startStaticServer = () => {
       if (filePath.endsWith('.html')) {
         res.setHeader('Content-Type', 'text/html; charset=UTF-8');
       }
-    }
+    },
+    maxAge: '1y',
+    etag: false
   }));
   
   // Serve index.html for all routes (for client-side routing)
   app.get('*', (req, res) => {
+    console.log('Handling request for:', req.url);
+    
     // Primeiro verificar se é um arquivo estático
     const staticFilePath = path.join(staticPath, req.url);
+    console.log('Checking static file path:', staticFilePath);
+    
     if (fs.existsSync(staticFilePath) && fs.statSync(staticFilePath).isFile()) {
+      console.log('Serving static file:', staticFilePath);
       // Servir o arquivo estático diretamente
       res.sendFile(staticFilePath);
       return;
