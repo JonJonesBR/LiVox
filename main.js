@@ -24,8 +24,14 @@ const createWindow = () => {
     icon: path.join(__dirname, 'icon.ico')
   });
 
-  // Load the Next.js app
-  mainWindow.loadURL('http://localhost:3000');
+  // Load the Next.js app - check if we're in development or production
+  const isDev = !app.isPackaged;
+  
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:3000');
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  }
 
   // Open external links in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -44,28 +50,37 @@ const createWindow = () => {
 
 // Start the backend server
 const startBackend = () => {
-  const backendPath = path.join(__dirname, 'backend');
+  const isDev = !app.isPackaged;
   
-  // Check if we're in a packaged app or development
-  const pythonPath = process.platform === 'win32' ? 
-    path.join(process.resourcesPath, 'backend', 'venv', 'Scripts', 'python.exe') :
-    path.join(process.resourcesPath, 'backend', 'venv', 'bin', 'python');
-    
-  const scriptPath = process.platform === 'win32' ?
-    path.join(process.resourcesPath, 'backend', 'main.py') :
-    path.join(process.resourcesPath, 'backend', 'main.py');
-
-  // For development, use local paths
-  const devPythonPath = path.join(backendPath, 'venv', process.platform === 'win32' ? 'Scripts' : 'bin', 'python.exe');
-  const devScriptPath = path.join(backendPath, 'main.py');
+  let backendPath, pythonPath, scriptPath;
   
-  const useDevPaths = fs.existsSync(backendPath);
-  const finalPythonPath = useDevPaths ? devPythonPath : pythonPath;
-  const finalScriptPath = useDevPaths ? devScriptPath : scriptPath;
+  if (isDev) {
+    // Development paths
+    backendPath = path.join(__dirname, 'backend');
+    pythonPath = path.join(backendPath, 'venv', 'Scripts', 'python.exe');
+    scriptPath = path.join(backendPath, 'main.py');
+  } else {
+    // Production paths (packaged app)
+    backendPath = path.join(process.resourcesPath, 'backend');
+    pythonPath = 'python'; // Use system Python in production
+    scriptPath = path.join(backendPath, 'main.py');
+  }
 
-  backendProcess = spawn(finalPythonPath, [finalScriptPath], {
-    cwd: useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend'),
-    env: { ...process.env, PYTHONPATH: useDevPaths ? backendPath : path.join(process.resourcesPath, 'backend') }
+  // Check if backend files exist
+  if (!fs.existsSync(scriptPath)) {
+    console.error('Backend script not found:', scriptPath);
+    return;
+  }
+
+  console.log('Starting backend with:', { pythonPath, scriptPath, backendPath });
+
+  backendProcess = spawn(pythonPath, [scriptPath], {
+    cwd: backendPath,
+    env: { 
+      ...process.env, 
+      PYTHONPATH: backendPath,
+      PYTHONUNBUFFERED: '1'
+    }
   });
 
   backendProcess.stdout.on('data', (data) => {
@@ -78,6 +93,10 @@ const startBackend = () => {
 
   backendProcess.on('close', (code) => {
     console.log(`Backend process exited with code ${code}`);
+  });
+
+  backendProcess.on('error', (error) => {
+    console.error('Failed to start backend:', error);
   });
 };
 
