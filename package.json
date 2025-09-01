@@ -19,8 +19,28 @@
   },
   "author": "LiVox Team",
   "license": "MIT",
+  "build": {
+    "appId": "com.livox.app",
+    "productName": "LiVox",
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.ico",
+      "build/**/*"
+    ],
+    "win": {
+      "icon": "icon.ico"
+    },
+    "extraResources": [
+      {
+        "from": "backend/dist/livox-backend.exe",
+        "to": "livox-backend.exe"
+      }
+    ]
+  },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -30,7 +50,6 @@
     "electron": "^37.3.1",
     "electron-builder": "^26.0.12",
     "electron-packager": "^17.1.2",
-    "electron-squirrel-startup": "^1.0.0",
     "eslint": "^8",
     "eslint-config-next": "14.0.3",
     "postcss": "^8",

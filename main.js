@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const express = require('express');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
 if (require('electron-squirrel-startup')) {
@@ -10,8 +11,30 @@ if (require('electron-squirrel-startup')) {
 
 let mainWindow;
 let backendProcess;
+let frontendUrl = '';
 
-const createWindow = () => {
+// --- Servidor de Frontend (Express) ---
+const startFrontendServer = () => {
+  return new Promise((resolve, reject) => {
+    const frontendApp = express();
+    const buildPath = path.join(__dirname, 'build');
+    frontendApp.use(express.static(buildPath));
+
+    const server = frontendApp.listen(0, '127.0.0.1', () => {
+      const port = server.address().port;
+      frontendUrl = `http://127.0.0.1:${port}`;
+      console.log(`Frontend server listening on ${frontendUrl}`);
+      resolve(frontendUrl);
+    });
+
+    server.on('error', (error) => {
+      console.error('Frontend server error:', error);
+      reject(error);
+    });
+  });
+};
+
+const createWindow = (urlToLoad) => {
   // Create the browser window
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -19,19 +42,13 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
     },
     icon: path.join(__dirname, 'icon.ico')
   });
 
-  // Load the Next.js app - check if we're in development or production
-  const isDev = !app.isPackaged;
-  
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:3000');
-  } else {
-    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
-  }
+  console.log(`Loading URL: ${urlToLoad}`);
+  mainWindow.loadURL(urlToLoad);
 
   // Open external links in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -41,48 +58,48 @@ const createWindow = () => {
 
   // Handle navigation to external URLs
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('http://localhost:3000')) {
+    if (!url.startsWith(frontendUrl)) {
       event.preventDefault();
       shell.openExternal(url);
     }
   });
 };
 
-// Start the backend server
+// --- Servidor de Backend (Python) ---
 const startBackend = () => {
   const isDev = !app.isPackaged;
-  
-  let backendPath, pythonPath, scriptPath;
-  
+
   if (isDev) {
-    // Development paths
-    backendPath = path.join(__dirname, 'backend');
-    pythonPath = path.join(backendPath, 'venv', 'Scripts', 'python.exe');
-    scriptPath = path.join(backendPath, 'main.py');
-  } else {
-    // Production paths (packaged app)
-    backendPath = path.join(process.resourcesPath, 'backend');
-    pythonPath = 'python'; // Use system Python in production
-    scriptPath = path.join(backendPath, 'main.py');
-  }
+    // Development: Run Python script directly
+    const backendPath = path.join(__dirname, 'backend');
+    const pythonPath = path.join(backendPath, 'venv', 'Scripts', 'python.exe');
+    const scriptPath = path.join(backendPath, 'main.py');
 
-  // Check if backend files exist
-  if (!fs.existsSync(scriptPath)) {
-    console.error('Backend script not found:', scriptPath);
-    return;
-  }
-
-  console.log('Starting backend with:', { pythonPath, scriptPath, backendPath });
-
-  backendProcess = spawn(pythonPath, [scriptPath], {
-    cwd: backendPath,
-    env: { 
-      ...process.env, 
-      PYTHONPATH: backendPath,
-      PYTHONUNBUFFERED: '1'
+    if (!fs.existsSync(scriptPath)) {
+      console.error('Backend script not found:', scriptPath);
+      return;
     }
-  });
 
+    console.log('Starting backend script with:', { pythonPath, scriptPath });
+    backendProcess = spawn(pythonPath, [scriptPath], {
+      cwd: backendPath,
+      env: { ...process.env, PYTHONPATH: backendPath, PYTHONUNBUFFERED: '1' }
+    });
+
+  } else {
+    // Production: Run packaged executable
+    const backendExePath = path.join(process.resourcesPath, 'livox-backend.exe');
+
+    if (!fs.existsSync(backendExePath)) {
+      console.error('Backend executable not found:', backendExePath);
+      return;
+    }
+
+    console.log('Starting backend executable from:', backendExePath);
+    backendProcess = spawn(backendExePath);
+  }
+
+  // Common process handlers
   backendProcess.stdout.on('data', (data) => {
     console.log(`Backend stdout: ${data}`);
   });
@@ -100,33 +117,42 @@ const startBackend = () => {
   });
 };
 
-// Kill backend process when app quits
 const killBackend = () => {
   if (backendProcess) {
     backendProcess.kill();
   }
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+// --- Ciclo de Vida do App ---
+app.whenReady().then(async () => {
   startBackend();
+
+  const isDev = !app.isPackaged;
+  let urlToLoad;
+
+  if (isDev) {
+    // Em desenvolvimento, o servidor do Next.js já está rodando
+    urlToLoad = 'http://localhost:3000';
+  } else {
+    // Em produção, iniciamos nosso próprio servidor para os arquivos estáticos
+    try {
+      urlToLoad = await startFrontendServer();
+    } catch (error) {
+      console.error('Could not start frontend server, quitting app.');
+      app.quit();
+      return;
+    }
+  }
   
-  createWindow();
+  createWindow(urlToLoad);
 
   app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow(urlToLoad);
     }
   });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     killBackend();

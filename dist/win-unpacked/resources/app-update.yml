@@ -1,0 +1,4 @@
+owner: JonJonesBR
+repo: audiobook-generator
+provider: github
+updaterCacheDirName: livox-updater
