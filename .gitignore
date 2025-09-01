@@ -1,22 +1,23 @@
 # Dependencies
 /node_modules
-/backend/venv
+/frontend/node_modules/
+/backend/venv/
 
 # Build artifacts
-/build
-/frontend/.next
-/frontend/out
-/backend/dist
-/backend/build
+/build/
+/frontend/.next/
+/frontend/out/
+/backend/dist/
+/backend/build/
 
 # Caches
-/backend/__pycache__
+/backend/__pycache__/
 *.pyc
 
 # Logs and environment variables
 *.log
 .env
-/erros
+/erros/
 shutdown.flag
 
 # Other generated files
