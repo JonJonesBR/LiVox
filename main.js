@@ -18,6 +18,14 @@ const startFrontendServer = () => {
   return new Promise((resolve, reject) => {
     const frontendApp = express();
     const buildPath = path.join(__dirname, 'build');
+    
+    // Check if build directory exists
+    if (!fs.existsSync(buildPath)) {
+      console.error('Build directory not found:', buildPath);
+      reject(new Error('Build directory not found. Please build the frontend first.'));
+      return;
+    }
+    
     frontendApp.use(express.static(buildPath));
 
     const server = frontendApp.listen(0, '127.0.0.1', () => {
@@ -31,6 +39,11 @@ const startFrontendServer = () => {
       console.error('Frontend server error:', error);
       reject(error);
     });
+    
+    // Add a timeout to reject the promise if server doesn't start in time
+    setTimeout(() => {
+      reject(new Error('Frontend server failed to start within timeout period'));
+    }, 10000); // 10 seconds timeout
   });
 };
 
@@ -75,16 +88,27 @@ const startBackend = () => {
     const pythonPath = path.join(backendPath, 'venv', 'Scripts', 'python.exe');
     const scriptPath = path.join(backendPath, 'main.py');
 
+    // Check if the backend script exists
     if (!fs.existsSync(scriptPath)) {
       console.error('Backend script not found:', scriptPath);
       return;
     }
 
-    console.log('Starting backend script with:', { pythonPath, scriptPath });
-    backendProcess = spawn(pythonPath, [scriptPath], {
-      cwd: backendPath,
-      env: { ...process.env, PYTHONPATH: backendPath, PYTHONUNBUFFERED: '1' }
-    });
+    // Check if Python executable exists
+    if (!fs.existsSync(pythonPath)) {
+      console.warn('Python virtual environment not found, trying system Python');
+      // Try system Python
+      backendProcess = spawn('python', [scriptPath], {
+        cwd: backendPath,
+        env: { ...process.env, PYTHONPATH: backendPath, PYTHONUNBUFFERED: '1' }
+      });
+    } else {
+      console.log('Starting backend script with:', { pythonPath, scriptPath });
+      backendProcess = spawn(pythonPath, [scriptPath], {
+        cwd: backendPath,
+        env: { ...process.env, PYTHONPATH: backendPath, PYTHONUNBUFFERED: '1' }
+      });
+    }
 
   } else {
     // Production: Run packaged executable
@@ -120,6 +144,16 @@ const startBackend = () => {
 const killBackend = () => {
   if (backendProcess) {
     backendProcess.kill();
+    // Add a timeout to force kill if the process doesn't terminate gracefully
+    setTimeout(() => {
+      try {
+        if (backendProcess && !backendProcess.killed) {
+          backendProcess.kill('SIGKILL');
+        }
+      } catch (error) {
+        console.error('Error force killing backend process:', error);
+      }
+    }, 5000); // Force kill after 5 seconds if not terminated
   }
 };
 
@@ -139,6 +173,10 @@ app.whenReady().then(async () => {
       urlToLoad = await startFrontendServer();
     } catch (error) {
       console.error('Could not start frontend server, quitting app.');
+      // Show error dialog to user
+      const { dialog } = require('electron');
+      dialog.showErrorBox('Application Error', 
+        'Failed to start the application server. Please check the logs for more details.\n\nError: ' + error.message);
       app.quit();
       return;
     }

@@ -15,7 +15,8 @@
     "electron:build:win": "npm run build:frontend && npm run copy:build && electron-builder --win",
     "electron:build:linux": "npm run build:frontend && npm run copy:build && electron-builder --linux",
     "electron:build:mac": "npm run build:frontend && npm run copy:build && electron-builder --mac",
-    "electron:pack": "npm run build:frontend && npm run copy:build && npx electron-packager . LiVox --platform=win32 --arch=x64 --out=dist-packager --overwrite --icon=icon.ico"
+    "electron:pack": "npm run build:frontend && npm run copy:build && npx electron-packager . LiVox --platform=win32 --arch=x64 --out=dist-packager --overwrite --icon=icon.ico",
+    "stop": "node stop-app.js"
   },
   "author": "LiVox Team",
   "license": "MIT",

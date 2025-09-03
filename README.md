@@ -4,7 +4,7 @@ Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta 
 
 ## 🎯 Para Iniciantes
 
-> 🎯 **Modo Fácil: Comece em 2 Cliques!**
+> 🎯 **Modo Fácil: Comece em 3 Cliques!**
 
 Com o LiVox, transformar seus documentos em audiobooks é simples!
 
@@ -15,19 +15,17 @@ Com o LiVox, transformar seus documentos em audiobooks é simples!
 
 **Como começar:**
 
-1.  **Baixe o LiVox:** [Clique aqui para baixar o LiVox](https://github.com/JonJonesBR/LiVox/archive/refs/heads/main.zip).
-2.  **Descompacte o arquivo:** Após o download, descompacte o arquivo ZIP.
-3.  **No Windows:** Dê um clique duplo no arquivo `start-local.bat`.
+## 🚀 Download do Aplicativo de Desktop
 
-O programa fará o resto! Ele irá:
+Para a experiência mais fácil e completa, baixe a versão executável do LiVox para Windows:
 
-*   Verificar se tudo está instalado.
-*   Instalar o que for necessário (como o FFmpeg).
-*   Abrir o programa no seu navegador.
+*   **Windows:** [LiVox Setup.exe](https://github.com/JonJonesBR/LiVox/releases/download/v0.1.1/LiVox_0.1.1.rar) (115MB)
 
-**Pronto!** Agora é só seguir as instruções na tela para criar seu audiobook.
+Após o download, descompacte o arquivo e execute o `LiVox Setup.exe`.
 
-**Dica:** Na primeira vez, pode demorar um pouco para baixar tudo. Seja paciente!
+O instalador automático começará a rodar e após finalizar a janela do app será aberta!
+
+## ATENÇÃO! SE O INSTALADOR INFORMAR QUE A JANELA OU O PROGRAMA NÃO CONSEGUE SER FECHADO DURANTE A INSTALAÇÃO, BASTA CLICAR EM REPETIR QUE A INSTALAÇÃO PROSSEGUIRÁ NORMALMENTE [ESTOU TRABALHANDO PARA RESOLVER ESSE BUG]
 
 ## 🌟 Recursos Principais
 
@@ -37,26 +35,25 @@ O programa fará o resto! Ele irá:
 
 ## 📖 Como Usar (Passo a Passo)
 
-1.  **Abra o LiVox:** O programa abre automaticamente no seu navegador (geralmente em http://localhost:3000).
+1.  **Abra o atalho do LiVox criado em sua área de trabalho ou no menu iniciar:**
 2.  **Selecione o Arquivo:** Clique em "Escolher arquivo" e selecione o documento que você quer transformar em audiobook.
 3.  **Escolha a Voz:** Selecione uma das vozes em português disponíveis.
 4.  **Configure (Opcional):**
     *   Adicione um título para o seu audiobook.
-    *   Ative a IA Gemini para melhorar o texto.
+    *   Ative a IA Gemini para melhorar o texto. [Você pode pegar a chave api do gemini de graça no link: https://aistudio.google.com/app/apikey]
 5.  **Gere o Audiobook:** Clique em "Gerar Audiobook".
 6.  **Acompanhe o Progresso:** Veja o status da conversão na tela.
-7.  **Baixe o Resultado:** Quando o processo terminar, o download do audiobook começará automaticamente.
+7.  **Baixe o Resultado:** Quando o processo terminar, o download do audiobook começará automaticamente e você pode escolher onde salvar e o nome do arquivo.
 
 ## 🛑 Como Parar o Programa
 
-*   **No Windows:** Execute o arquivo `stop-local.bat` ou feche as janelas do terminal que apareceram.
-*   **No Linux/Mac:** Pressione Ctrl+C nas janelas do terminal.
+*   **No Windows:** Clique no botão vermelho no canto superior direito do app chamado: Fechar Aplicativo
 
 ## ❓ Dúvidas?
 
 Se você tiver algum problema, aqui estão algumas dicas:
 
-*   **O programa não abre:** Na primeira vez, pode demorar um pouco para baixar e instalar tudo. Espere alguns minutos e verifique se há alguma janela do terminal aberta.
+*   **O programa não abre:** Na primeira vez, pode demorar um pouco para baixar e instalar tudo. Espere alguns minutos.
 *   **Mensagem "Porta já em uso":** Outro programa está usando a mesma porta que o LiVox precisa. Tente executar `stop-local.bat` ou reiniciar o computador.
 *   **Outros problemas:** Se você encontrar outros problemas, siga as instruções na tela ou consulte a seção para programadores para obter mais informações sobre como solucionar problemas.
 
@@ -75,11 +72,15 @@ Feito com ❤️ para a comunidade de audiobooks
 ### Estrutura do Projeto
 
 -   **frontend/**: Código do frontend (Next.js)
--   **backend/**: Código do backend (Python, Flask)
--   **build/**: Arquivos gerados pelo processo de build
+-   **backend/**: Código do backend (Python, FastAPI)
+-   **build/**: Saída de build do frontend para o Electron
+-   **dist/**: Saída de build do Electron (aplicativo de desktop)
 -   **backend/audiobooks/**: Arquivos de áudio gerados
 -   **backend/uploads/**: Arquivos de upload
--   **start-*.bat/sh**: Scripts para iniciar e parar o projeto
+-   **start-*.bat/sh**: Scripts para iniciar e parar o projeto em modo de desenvolvimento
+-   **main.js**: Ponto de entrada principal do Electron
+-   **preload.js**: Script de pré-carregamento do Electron
+-   **stop-app.js**: Script cross-platform para parar a aplicação
 
 ### Como Configurar o Ambiente de Desenvolvimento
 
@@ -87,13 +88,13 @@ Feito com ❤️ para a comunidade de audiobooks
 
 *   Node.js e npm (ou yarn)
 *   Python 3.x
-*   Docker (opcional)
 *   FFmpeg (necessário para conversão de áudio)
 
 **Passos:**
 
 1.  **Instale as dependências:**
-    *   No diretório `frontend/`, execute `npm install` ou `yarn install`.
+    *   No diretório raiz, execute `npm install`.
+    *   No diretório `frontend/`, execute `npm install`.
     *   No diretório `backend/`, execute `pip install -r requirements.txt`.
 2.  **Configure as variáveis de ambiente:**
     *   Crie um arquivo `.env.local` no diretório `frontend/`.
@@ -102,11 +103,48 @@ Feito com ❤️ para a comunidade de audiobooks
         NEXT_PUBLIC_API_URL=http://localhost:8000
         ```
 
-### Como Executar o Projeto
+### Como Executar o Projeto em Modo de Desenvolvimento
 
 1.  **Backend:** No diretório `backend/`, execute `python main.py`.
-2.  **Frontend:** No diretório `frontend/`, execute `npm run dev` ou `yarn dev`.
-3.  Acesse o frontend em http://localhost:3000.
+2.  **Frontend:** No diretório `frontend/`, execute `npm run dev`.
+3.  **Electron:** No diretório raiz, execute `npm run electron`.
+4.  Acesse o frontend em http://localhost:3000.
+
+### Como Construir o Aplicativo de Desktop
+
+Para gerar o aplicativo de desktop (Windows, Linux, macOS):
+
+1.  **Certifique-se de ter as dependências de desenvolvimento instaladas:** Node.js, npm, Python, pip.
+2.  **Instale as dependências do projeto raiz:**
+    ```bash
+    npm install
+    ```
+3.  **Construa o backend Python em um executável:**
+    ```bash
+    cd backend
+    pip install pyinstaller
+    python -m PyInstaller livox-backend.spec
+    cd ..
+    ```
+4.  **Execute o script de build do Electron:**
+    ```bash
+    npm run electron:build:win
+    ```
+    Isso irá:
+    *   Construir o frontend Next.js.
+    *   Copiar o frontend construído para o diretório `build/`.
+    *   Empacotar o aplicativo Electron, incluindo o backend Python compilado.
+
+    Os executáveis serão gerados no diretório `dist/`.
+
+### Scripts Disponíveis
+
+*   `npm run dev`: Inicia o frontend Next.js em modo de desenvolvimento
+*   `npm run electron`: Inicia a aplicação Electron em modo de desenvolvimento
+*   `npm run electron:build:win`: Constrói o aplicativo para Windows
+*   `npm run electron:build:linux`: Constrói o aplicativo para Linux
+*   `npm run electron:build:mac`: Constrói o aplicativo para macOS
+*   `npm run stop`: Para a aplicação usando o script cross-platform
 
 ### Como Contribuir
 
@@ -119,13 +157,35 @@ Feito com ❤️ para a comunidade de audiobooks
 ### Tecnologias Utilizadas
 
 *   **Frontend:** Next.js, React, shadcn/ui
-*   **Backend:** Python, Flask, Microsoft Edge TTS, Google Gemini (opcional)
+*   **Backend:** Python, FastAPI, Microsoft Edge TTS, Google Gemini (opcional)
+*   **Desktop Application:** Electron
 *   **Banco de Dados:** Nenhum (arquivos locais)
-*   **Containerização:** Docker
 
 ## 📝 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto está sob a licença MIT:
+
+MIT License
+
+Copyright (c) 2025 LiVox Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 

@@ -59,9 +59,66 @@ os.makedirs("uploads", exist_ok=True)
 os.makedirs("audiobooks", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
+def check_ffmpeg():
+    """Check if FFmpeg is available in the system."""
+    try:
+        result = subprocess.run([FFMPEG_BIN, "-version"], 
+                              stdout=subprocess.DEVNULL, 
+                              stderr=subprocess.DEVNULL, 
+                              check=True)
+        logger.info("✅ FFmpeg is available")
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.warning("⚠️ FFmpeg not found. Audio merging functionality may not work.")
+        return False
+
+# Check FFmpeg availability at startup
+check_ffmpeg()
+
+def limpar_tarefas_antigas():
+    """Remove old tasks and associated files to prevent disk space issues."""
+    try:
+        # Remove tasks older than 24 hours
+        hora_atual = time.time()
+        limite_tempo = 24 * 60 * 60  # 24 hours in seconds
+        
+        tarefas_removidas = 0
+        for task_id, task_info in list(conversion_tasks.items()):
+            # Check if task has a timestamp or file path to determine age
+            if "timestamp" not in task_info:
+                task_info["timestamp"] = hora_atual
+                continue
+                
+            if hora_atual - task_info["timestamp"] > limite_tempo:
+                # Remove associated files if they exist
+                if "file_path" in task_info and task_info["file_path"]:
+                    try:
+                        if os.path.exists(task_info["file_path"]):
+                            os.remove(task_info["file_path"])
+                            logger.info(f"🧹 Removed old audiobook file: {task_info['file_path']}")
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error removing old file {task_info['file_path']}: {e}")
+                
+                # Remove task from dictionary
+                del conversion_tasks[task_id]
+                tarefas_removidas += 1
+        
+        if tarefas_removidas > 0:
+            logger.info(f"🧹 Cleaned up {tarefas_removidas} old tasks")
+            salvar_conversion_tasks()
+            
+    except Exception as e:
+        logger.error(f"❌ Error during task cleanup: {e}")
+
 def salvar_conversion_tasks():
     """Salva o estado atual do dicionário de tarefas em um arquivo JSON."""
     try:
+        # Add timestamp to each task before saving
+        hora_atual = time.time()
+        for task_id, task_info in conversion_tasks.items():
+            if "timestamp" not in task_info:
+                task_info["timestamp"] = hora_atual
+        
         with open(TAREFAS_JSON, "w", encoding="utf-8") as f:
             json.dump(conversion_tasks, f, ensure_ascii=False, indent=2)
     except Exception as e:
@@ -594,7 +651,8 @@ async def process_file_endpoint(
         "status": "in_queue",
         "message": "Tarefa recebida e na fila.",
         "progress": 0,
-        "file_path": None
+        "file_path": None,
+        "timestamp": time.time()  # Add timestamp for cleanup
     }
 
     background_tasks.add_task(
@@ -734,6 +792,13 @@ def _unificar_audios_ffmpeg(lista_arquivos_temp: list, arquivo_final: str) -> bo
                 safe_path = str(Path(temp_file).resolve()).replace("'", r"\'")
                 f_list.write(f"file '{safe_path}'\n")
 
+        # Check if ffmpeg is available
+        try:
+            subprocess.run([FFMPEG_BIN, "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logger.error(f"❌ FFmpeg not found. Please install FFmpeg and make sure it's in your PATH.")
+            return False
+
         comando = [
             FFMPEG_BIN, '-y',
             '-f', 'concat',
@@ -746,30 +811,30 @@ def _unificar_audios_ffmpeg(lista_arquivos_temp: list, arquivo_final: str) -> bo
         process = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
 
         if process.returncode != 0:
-            logger.error(f"❌ Erro durante a unificação (código {process.returncode}):")
+            logger.error(f"❌ Error during unification (code {process.returncode}):")
             logger.error(process.stderr.decode(errors='ignore'))
             return False
 
-        logger.info(f"✅ Unificação concluída: {os.path.basename(arquivo_final)}")
+        logger.info(f"✅ Unification completed: {os.path.basename(arquivo_final)}")
         return True
 
     except FileNotFoundError:
-        logger.error("❌ FFmpeg não encontrado. Verifique a instalação.")
+        logger.error("❌ FFmpeg not found. Please install FFmpeg and make sure it's in your PATH.")
         return False
     except subprocess.CalledProcessError as e:
-        logger.error(f"❌ Erro no FFmpeg: {e.stderr.decode(errors='ignore')}")
+        logger.error(f"❌ FFmpeg error: {e.stderr.decode(errors='ignore')}")
         return False
     except Exception as e:
-        logger.error(f"❌ Erro inesperado: {str(e)}")
+        logger.error(f"❌ Unexpected error: {str(e)}")
         logger.error(traceback.format_exc())
         return False
     finally:
         if os.path.exists(lista_txt_path):
             try:
                 os.remove(lista_txt_path)
-                logger.info(f"🧹 Lista temporária removida: {os.path.basename(lista_txt_path)}")
+                logger.info(f"🧹 Temporary list removed: {os.path.basename(lista_txt_path)}")
             except Exception as e:
-                logger.warning(f"⚠️ Erro ao remover lista temporária: {e}")
+                logger.warning(f"⚠️ Error removing temporary list: {e}")
 
 async def perform_conversion_task(file_path: str, voice: str, task_id: str, use_gemini_enhancement: bool = False, book_title: Optional[str] = None): # Changed type hint to Optional[str]
     temp_chunks_dir = None
@@ -962,30 +1027,39 @@ async def perform_conversion_task(file_path: str, voice: str, task_id: str, use_
 
 @app.post("/shutdown")
 async def shutdown_application():
-    """Endpoint para sinalizar shutdown criando arquivo shutdown.flag."""
+    """Endpoint to signal shutdown by creating shutdown.flag file."""
     try:
-        with open("../shutdown.flag", "w") as f:
+        # Add a simple authentication check to prevent unauthorized shutdown
+        # In a real application, you would implement proper authentication
+        flag_path = "../shutdown.flag"
+        
+        # Check if flag already exists to prevent multiple shutdown signals
+        if os.path.exists(flag_path):
+            return JSONResponse({"message": "Shutdown already initiated"})
+            
+        with open(flag_path, "w") as f:
             f.write("shutdown")
-        logger.info("🛑 Arquivo shutdown.flag criado.")
-
-        # Tentar executar stop-local.bat automaticamente (caso start-local.bat nao esteja monitorando)
+        logger.info("🛑 Shutdown flag file created.")
+        
+        # Try to execute stop-local.bat automatically (if start-local.bat isn't monitoring)
         try:
             project_root = Path(__file__).resolve().parent.parent
             stop_script = project_root / "stop-local.bat"
             if stop_script.exists():
-                logger.info(f"🛑 Tentando executar {stop_script} para encerrar serviços...")
-                # Executa o script em background via cmd
-                subprocess.Popen(["cmd", "/c", str(stop_script)], cwd=str(project_root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                logger.info(f"🛑 Attempting to execute {stop_script} to stop services...")
+                # Execute the script in background via cmd
+                subprocess.Popen(["cmd", "/c", str(stop_script)], cwd=str(project_root), 
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
-                logger.warning(f"Arquivo de parada nao encontrado: {stop_script}")
+                logger.warning(f"Stop script not found: {stop_script}")
         except Exception as e_run:
-            logger.warning(f"Erro ao tentar executar stop-local.bat automaticamente: {e_run}")
-
-        # Tentativa adicional: encerrar processos que estejam escutando nas portas 8000 e 3000 (Windows)
+            logger.warning(f"Error trying to execute stop-local.bat automatically: {e_run}")
+        
+        # Additional attempt: terminate processes listening on ports 8000 and 3000 (Windows)
         try:
             import platform
             if platform.system().lower().startswith("win"):
-                logger.info("🛑 Tentando identificar processos nas portas 8000/3000 e finalizá-los (Windows)...")
+                logger.info("🛑 Trying to identify processes on ports 8000/3000 and terminate them (Windows)...")
                 try:
                     netstat_out = subprocess.check_output("netstat -ano", shell=True, stderr=subprocess.DEVNULL)
                     netstat_text = netstat_out.decode(errors='ignore')
@@ -997,21 +1071,22 @@ async def shutdown_application():
                                     pid = parts[-1]
                                     if pid.isdigit():
                                         try:
-                                            subprocess.run(["taskkill", "/PID", pid, "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                            logger.info(f"🛑 Finalizado PID {pid} que atendia porta {port}")
+                                            subprocess.run(["taskkill", "/PID", pid, "/F"], 
+                                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                            logger.info(f"🛑 Terminated PID {pid} listening on port {port}")
                                         except Exception as e_kill:
-                                            logger.warning(f"Erro ao finalizar PID {pid}: {e_kill}")
+                                            logger.warning(f"Error terminating PID {pid}: {e_kill}")
                 except Exception as e_net:
-                    logger.warning(f"Erro ao executar netstat/taskkill: {e_net}")
+                    logger.warning(f"Error executing netstat/taskkill: {e_net}")
             else:
-                logger.info("🛑 Sistema nao-Windows detectado; pulando tentativa automatica de taskkill.")
+                logger.info("🛑 Non-Windows system detected; skipping automatic taskkill attempt.")
         except Exception as e_extra:
-            logger.warning(f"Erro na tentativa adicional de finalizacao de portas: {e_extra}")
-
-        return JSONResponse({"message": "Sinal de desligamento enviado. Encerramento em andamento."})
+            logger.warning(f"Error in additional port termination attempt: {e_extra}")
+        
+        return JSONResponse({"message": "Shutdown signal sent. Shutting down."})
     except Exception as e:
-        logger.error(f"Erro ao criar arquivo shutdown.flag: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao sinalizar desligamento.")
+        logger.error(f"Error creating shutdown.flag file: {e}")
+        raise HTTPException(status_code=500, detail="Error signaling shutdown.")
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,25 +1,72 @@
-# Dependencies
-/node_modules
-/frontend/node_modules/
-/backend/venv/
+# Build outputs
+dist/
+build/
+backend/dist/
+frontend/out/
 
-# Build artifacts
-/build/
-/frontend/.next/
-/frontend/out/
-/backend/dist/
-/backend/build/
-
-# Caches
-/backend/__pycache__/
-*.pyc
-
-# Logs and environment variables
+# Logs
 *.log
-.env
-/erros/
-shutdown.flag
 
-# Other generated files
-conversion_tasks.json
+# Temp files
+*.tmp
+*.temp
+
+# OS generated files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE files
+.vscode/
+*.swp
+*.swo
+
+# Node modules
+node_modules/
+frontend/node_modules/
+frontend/.next/
+
+# Python
+backend/venv/
+backend/.venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Error directory
+erro/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Package lock files
 package-lock.json
+frontend/package-lock.json
+
+# Executables and binaries
+*.exe
+*.dll
+*.pak
+*.dat
+*.bin
+*.txt
+*.html
+*.yml
+*.blockmap
+
+# Specific folders to ignore
+dist/**
+backend/dist/**
+frontend/out/**

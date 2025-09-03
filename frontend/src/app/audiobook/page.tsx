@@ -33,7 +33,10 @@ export default function AudiobookGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [apiKeySaved, setApiKeySaved] = useState<boolean>(false);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+                      (typeof window !== 'undefined' ? 
+                        `${window.location.protocol}//${window.location.hostname}:8000` : 
+                        "http://localhost:8000");
 
   useEffect(() => {
     fetchVoices();
@@ -192,34 +195,37 @@ export default function AudiobookGenerator() {
   };
 
   const handleCloseApplication = async () => {
-    // Confirmar antes de fechar
+    // Confirm before closing
     const confirmClose = window.confirm("Tem certeza que deseja fechar o aplicativo?");
     if (!confirmClose) return;
 
     try {
-      // Mostrar mensagem imediatamente
+      // Show message immediately
       alert("Fechando aplicativo... A página será fechada automaticamente em alguns segundos.");
       
-      // Chamar o endpoint de shutdown do backend
-      fetch(`${API_BASE_URL}/shutdown`, {
+      // Call the backend shutdown endpoint
+      const response = await fetch(`${API_BASE_URL}/shutdown`, {
         method: "POST",
-      }).catch(() => {
-        // Ignorar erros - o backend pode já ter parado
       });
       
-      // Fechar o frontend após 4 segundos (tempo suficiente para o backend parar)
+      if (!response.ok) {
+        console.warn("Shutdown endpoint returned error:", response.status);
+      }
+      
+      // Close the frontend after 4 seconds (enough time for backend to stop)
       setTimeout(() => {
-        // Tentar fechar a aba do navegador
+        // Try to close the browser tab
         window.close();
         
-        // Se não conseguir fechar a aba, mostrar mensagem após um tempo
+        // If we can't close the tab, show message after a delay
         setTimeout(() => {
           alert("Aplicativo foi fechado. Você pode fechar esta aba manualmente se ela não fechou automaticamente.");
         }, 1000);
       }, 4000);
       
     } catch (err) {
-      // Se der erro na requisição, ainda assim fechar o frontend
+      console.error("Error calling shutdown endpoint:", err);
+      // Still close the frontend even if the request fails
       setTimeout(() => {
         window.close();
         setTimeout(() => {
