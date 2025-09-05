@@ -21,15 +21,11 @@ Para a experiência mais fácil e completa, baixe a versão executável do LylyR
 
 *   **Windows:** [LylyReader Setup.exe](https://github.com/JonJonesBR/LylyReader/releases/download/0.1.0/LylyReader.Setup.0.1.0.zip) (115MB)
 
-<<<<<<< HEAD
-Após o download, descompacte o arquivo e execute o `LylyReader Setup.exe`.
-=======
 Após o download, descompacte o arquivo e execute o LylyReader Setup.exe`.
->>>>>>> 373016524d6ddd6fcc16387d2ecd629c933993c8
 
 O instalador automático começará a rodar e após finalizar a janela do app será aberta!
 
-## ATENÇÃO! SE O INSTALADOR INFORMAR QUE A JANELA OU O PROGRAMA NÃO CONSEGUE SER FECHADO DURANTE A INSTALAÇÃO, BASTA CLICAR EM REPETIR QUE A INSTALAÇÃO PROSSEGUIRÁ NORMALMENTE [ESTOU TRABALHANDO PARA RESOLVER ESSE BUG]
+### ATENÇÃO! SE O INSTALADOR INFORMAR QUE A JANELA OU O PROGRAMA NÃO CONSEGUE SER FECHADO DURANTE A INSTALAÇÃO, BASTA CLICAR EM REPETIR QUE A INSTALAÇÃO PROSSEGUIRÁ NORMALMENTE [ESTOU TRABALHANDO PARA RESOLVER ESSE BUG]
 
 ## 🌟 Recursos Principais
 
