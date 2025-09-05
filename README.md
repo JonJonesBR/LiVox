@@ -19,7 +19,7 @@ Com o LylyReader, transformar seus documentos em audiobooks é simples!
 
 Para a experiência mais fácil e completa, baixe a versão executável do LylyReader para Windows:
 
-*   **Windows:** [LylyReader Setup.exe](https://github.com/JonJonesBR/LylyReader/releases/download/v0.1.1/LylyReader_0.1.1.rar) (115MB)
+*   **Windows:** [LylyReader Setup.exe](https://github.com/JonJonesBR/LylyReader/releases/download/0.1.0/LylyReader.Setup.0.1.0.zip) (115MB)
 
 <<<<<<< HEAD
 Após o download, descompacte o arquivo e execute o `LylyReader Setup.exe`.
