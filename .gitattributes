@@ -1,5 +1,5 @@
 *.exe filter=lfs diff=lfs merge=lfs -text
-dist/LiVox[[:space:]]Setup[[:space:]]0.1.0.exe filter=lfs diff=lfs merge=lfs -text
-dist/win-unpacked/LiVox.exe filter=lfs diff=lfs merge=lfs -text
+dist/LylyReader[[:space:]]Setup[[:space:]]0.1.0.exe filter=lfs diff=lfs merge=lfs -text
+dist/win-unpacked/LylyReader.exe filter=lfs diff=lfs merge=lfs -text
 dist/win-unpacked/resources/*.exe filter=lfs diff=lfs merge=lfs -text
 dist/*.exe filter=lfs diff=lfs merge=lfs -text

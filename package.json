@@ -1,5 +1,5 @@
 {
-  "name": "livox",
+  "name": "lylyreader",
   "version": "0.1.0",
   "private": true,
   "description": "Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta qualidade usando tecnologia de ponta.",
@@ -15,14 +15,14 @@
     "electron:build:win": "npm run build:frontend && npm run copy:build && electron-builder --win",
     "electron:build:linux": "npm run build:frontend && npm run copy:build && electron-builder --linux",
     "electron:build:mac": "npm run build:frontend && npm run copy:build && electron-builder --mac",
-    "electron:pack": "npm run build:frontend && npm run copy:build && npx electron-packager . LiVox --platform=win32 --arch=x64 --out=dist-packager --overwrite --icon=icon.ico",
+    "electron:pack": "npm run build:frontend && npm run copy:build && npx electron-packager . LylyReader --platform=win32 --arch=x64 --out=dist-packager --overwrite --icon=icon.ico",
     "stop": "node stop-app.js"
   },
-  "author": "LiVox Team",
+  "author": "LylyReader Team",
   "license": "MIT",
   "build": {
-    "appId": "com.livox.app",
-    "productName": "LiVox",
+    "appId": "com.lylyreader.app",
+    "productName": "LylyReader",
     "files": [
       "main.js",
       "preload.js",
@@ -34,8 +34,8 @@
     },
     "extraResources": [
       {
-        "from": "backend/dist/livox-backend.exe",
-        "to": "livox-backend.exe"
+        "from": "backend/dist/lylyreader-backend.exe",
+        "to": "lylyreader-backend.exe"
       }
     ]
   },

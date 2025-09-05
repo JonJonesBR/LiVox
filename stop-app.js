@@ -2,7 +2,7 @@ const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🛑 Stopping Audiobook Generator...');
+console.log('🛑 Stopping LylyReader...');
 
 // Create shutdown flag file
 const shutdownFlagPath = path.join(__dirname, 'shutdown.flag');

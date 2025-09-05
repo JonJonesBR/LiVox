@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo INICIANDO FRONTEND DO AUDIOBOOK GENERATOR (LOCAL)
+echo INICIANDO FRONTEND DO LYLIREADER (LOCAL)
 echo ==========================================
 
 REM === VERIFICACOES DE DEPENDENCIAS ===

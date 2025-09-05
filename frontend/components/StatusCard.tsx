@@ -66,7 +66,7 @@ export function StatusCard({ taskStatus, currentTask, downloadAudiobook }: Statu
             className="w-full"
           >
             <Download className="mr-2 h-4 w-4" />
-            Baixar Audiobook
+            Baixar LylyReader
           </Button>
         )}
       </CardContent>

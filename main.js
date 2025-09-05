@@ -112,7 +112,7 @@ const startBackend = () => {
 
   } else {
     // Production: Run packaged executable
-    const backendExePath = path.join(process.resourcesPath, 'livox-backend.exe');
+    const backendExePath = path.join(process.resourcesPath, 'lylyreader-backend.exe');
 
     if (!fs.existsSync(backendExePath)) {
       console.error('Backend executable not found:', backendExePath);

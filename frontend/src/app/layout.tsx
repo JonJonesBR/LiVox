@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Audiobook Generator",
-  description: "Transform your documents into audiobooks with natural voices",
+  title: "LylyReader",
+  description: "Transform your documents into LylyReader with natural voices",
 };
 
 export default function RootLayout({

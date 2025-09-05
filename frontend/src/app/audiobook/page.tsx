@@ -20,7 +20,7 @@ interface TaskStatus {
   file_path?: string;
 }
 
-export default function AudiobookGenerator() {
+export default function LylyReader() {
   const [voices, setVoices] = useState<VoiceOption>({});
   const [selectedVoice, setSelectedVoice] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -35,7 +35,7 @@ export default function AudiobookGenerator() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
                       (typeof window !== 'undefined' ? 
-                        `${window.location.protocol}//${window.location.hostname}:8000` : 
+                        `${window.location.protocol}//${window.location.hostname === '127.0.0.1' ? 'localhost' : window.location.hostname}:8000` : 
                         "http://localhost:8000");
 
   useEffect(() => {
@@ -251,14 +251,15 @@ export default function AudiobookGenerator() {
           </Button>
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🔊 Audiobook Generator
-          </h1>
-          <p className="text-lg text-gray-600">
-            Transforme seus documentos em audiobooks com vozes naturais
-          </p>
-        </div>
+        <div className="flex flex-col items-center space-y-4">
+                <Volume2 className="h-12 w-12 text-blue-500" />
+                <h1 className="text-3xl font-bold text-center">
+                  🔊 LylyReader
+                </h1>
+                <p className="text-lg text-gray-600 text-center">
+                  Transforme seus documentos em audiobooks com vozes naturais
+                </p>
+              </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <FileUploadCard
@@ -296,7 +297,7 @@ export default function AudiobookGenerator() {
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Gerar Audiobook
+                Gerar LylyReader
               </>
             )}
           </Button>
@@ -324,10 +325,10 @@ export default function AudiobookGenerator() {
             <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
               <li>Selecione um arquivo (PDF, TXT, EPUB, DOC ou DOCX)</li>
               <li>Escolha uma voz na lista de opções</li>
-              <li>Opcional: Adicione um título para o audiobook</li>
+              <li>Opcional: Adicione um título para o LylyReader</li>
               <li>Opcional: Use IA Gemini para melhorar a qualidade do texto</li>
-              <li>Clique em "Gerar Audiobook" e aguarde o processamento</li>
-              <li>Baixe seu audiobook quando estiver pronto</li>
+              <li>Clique em "Gerar LylyReader" e aguarde o processamento</li>
+              <li>Baixe seu LylyReader quando estiver pronto</li>
             </ol>
           </CardContent>
         </Card>

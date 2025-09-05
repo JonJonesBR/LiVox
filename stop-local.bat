@@ -5,7 +5,7 @@ rem Arquivo de log para ações de parada
 set LOG_FILE=%cd%\stop-local.log
 echo %date% %time% - Iniciando stop-local.bat > "%LOG_FILE%"
 
-echo PARANDO AUDIOBOOK GENERATOR (MODO LOCAL)
+echo PARANDO LYLIREADER (MODO LOCAL)
 echo ==========================================
 
 set PROCESSES_FOUND=0
@@ -143,7 +143,7 @@ echo.
 echo Verificando processos por nome (backup)...
 
 REM Procurar processos Python relacionados ao projeto
-echo Procurando processos Python do audiobook generator...
+echo Procurando processos Python do LylyReader...
 tasklist /FI "IMAGENAME eq python.exe" 2>nul | findstr python.exe >nul
 if %errorlevel% == 0 (
     for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq python.exe" /FO CSV 2^>nul ^| findstr python.exe') do (
@@ -167,7 +167,7 @@ if %errorlevel% == 0 (
 )
 
 REM Procurar processos Node.js relacionados ao projeto
-echo Procurando processos Node.js do audiobook generator...
+echo Procurando processos Node.js do LylyReader...
 tasklist /FI "IMAGENAME eq node.exe" 2>nul | findstr node.exe >nul
 if %errorlevel% == 0 (
     for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq node.exe" /FO CSV 2^>nul ^| findstr node.exe') do (

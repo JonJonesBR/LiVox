@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script para parar o ambiente do Audiobook Generator
+# Script para parar o ambiente do LylyReader
 
-echo "🛑 Parando Audiobook Generator..."
+echo "🛑 Parando LylyReader..."
 
 # Primeiro, tentar parar com docker-compose
 echo "📋 Tentando parar com docker-compose..."

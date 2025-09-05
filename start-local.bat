@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ==========================================
-echo  AUDIOBOOK GENERATOR - LOCAL MODE
+echo  LYLIREADER - LOCAL MODE
 echo ==========================================
 echo Versao: 2.0 - Inicializacao Aprimorada
 echo Modo: Desenvolvimento Local
@@ -47,7 +47,7 @@ if %errorlevel% == 0 (
         taskkill /PID %%a /F >nul 2>&1
     )
     timeout /t 2 /nobreak >nul
-else (
+) else (
     echo [OK] Porta 8000 livre
 )
 
@@ -58,7 +58,7 @@ if %errorlevel% == 0 (
         taskkill /PID %%a /F >nul 2>&1
     )
     timeout /t 2 /nobreak >nul
-else (
+) else (
     echo [OK] Porta 3000 livre
 )
 
@@ -141,13 +141,13 @@ echo ==========================================
 
 REM Criar arquivo de log para acompanhar a inicializacao
 set LOG_FILE=%cd%\startup.log
-echo %date% %time% - Iniciando Audiobook Generator > "%LOG_FILE%"
+echo %date% %time% - Iniciando LylyReader > "%LOG_FILE%"
 
 echo Passo 1/3: Iniciando Backend (Python/FastAPI)...
 echo %date% %time% - Iniciando backend >> "%LOG_FILE%"
 
 REM Iniciar backend em uma nova janela
-start "Audiobook Generator - Backend" /D "%cd%" cmd /c "start-backend.bat"
+start "LylyReader - Backend" /D "%cd%" cmd /c "start-backend.bat"
 
 echo [OK] Backend iniciando em janela separada...
 echo Aguardando inicializacao do backend (10 segundos)...
@@ -202,7 +202,7 @@ if not exist "frontend\node_modules" (
 )
 
 REM Iniciar frontend em uma nova janela
-start "Audiobook Generator - Frontend" /D "%cd%" cmd /c "start-frontend.bat && echo Frontend encerrado && pause"
+start "LylyReader - Frontend" /D "%cd%" cmd /c "start-frontend.bat && echo Frontend encerrado && pause"
 
 echo [OK] Frontend iniciando em janela separada...
 echo Aguardando inicializacao do frontend (20 segundos)...
@@ -240,8 +240,8 @@ echo   Documentacao API: http://localhost:8000/docs
 echo   Saude da API: http://localhost:8000/health
 echo.
 echo JANELAS ABERTAS:
-echo   Backend: Janela "Audiobook Generator - Backend"
-echo   Frontend: Janela "Audiobook Generator - Frontend"
+echo   Backend: Janela "LylyReader - Backend"
+echo   Frontend: Janela "LylyReader - Frontend"
 echo.
 echo PARA PARAR O SISTEMA:
 echo   Execute: stop-local.bat
@@ -271,7 +271,7 @@ if %errorlevel% == 0 (
 
 echo.
 
-echo Aproveite o Audiobook Generator!
+echo Aproveite o LylyReader!
 echo ==========================================
 
 REM === MONITORAMENTO DE SHUTDOWN ===

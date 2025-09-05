@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script de teste para o Audiobook Generator Backend
+# Script de teste para o LylyReader Backend
 """
 
 import requests
@@ -57,7 +57,7 @@ def test_gemini_api_key():
 
 def main():
     """Função principal de teste"""
-    print("🧪 Testing Audiobook Generator Backend")
+    print("🧪 Testing LylyReader Backend")
     print("=" * 50)
     
     # Testa saúde do backend

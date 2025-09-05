@@ -1,4 +1,4 @@
-# 🔊 LiVox
+# 🔊 LylyReader
 
 Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta qualidade usando tecnologia de ponta.
 
@@ -6,7 +6,7 @@ Transforme seus documentos e e-books em audiobooks com vozes naturais e de alta 
 
 > 🎯 **Modo Fácil: Comece em 3 Cliques!**
 
-Com o LiVox, transformar seus documentos em audiobooks é simples!
+Com o LylyReader, transformar seus documentos em audiobooks é simples!
 
 **O que você precisa:**
 
@@ -17,11 +17,11 @@ Com o LiVox, transformar seus documentos em audiobooks é simples!
 
 ## 🚀 Download do Aplicativo de Desktop
 
-Para a experiência mais fácil e completa, baixe a versão executável do LiVox para Windows:
+Para a experiência mais fácil e completa, baixe a versão executável do LylyReader para Windows:
 
-*   **Windows:** [LiVox Setup.exe](https://github.com/JonJonesBR/LiVox/releases/download/v0.1.1/LiVox_0.1.1.rar) (115MB)
+*   **Windows:** [LylyReader Setup.exe](https://github.com/JonJonesBR/LylyReader/releases/download/v0.1.1/LylyReader_0.1.1.rar) (115MB)
 
-Após o download, descompacte o arquivo e execute o `LiVox Setup.exe`.
+Após o download, descompacte o arquivo e execute o `LylyReader Setup.exe`.
 
 O instalador automático começará a rodar e após finalizar a janela do app será aberta!
 
@@ -35,7 +35,7 @@ O instalador automático começará a rodar e após finalizar a janela do app se
 
 ## 📖 Como Usar (Passo a Passo)
 
-1.  **Abra o atalho do LiVox criado em sua área de trabalho ou no menu iniciar:**
+1.  **Abra o atalho do LylyReader criado em sua área de trabalho ou no menu iniciar:**
 2.  **Selecione o Arquivo:** Clique em "Escolher arquivo" e selecione o documento que você quer transformar em audiobook.
 3.  **Escolha a Voz:** Selecione uma das vozes em português disponíveis.
 4.  **Configure (Opcional):**
@@ -54,7 +54,7 @@ O instalador automático começará a rodar e após finalizar a janela do app se
 Se você tiver algum problema, aqui estão algumas dicas:
 
 *   **O programa não abre:** Na primeira vez, pode demorar um pouco para baixar e instalar tudo. Espere alguns minutos.
-*   **Mensagem "Porta já em uso":** Outro programa está usando a mesma porta que o LiVox precisa. Tente executar `stop-local.bat` ou reiniciar o computador.
+*   **Mensagem "Porta já em uso":** Outro programa está usando a mesma porta que o LylyReader precisa. Tente executar `stop-local.bat` ou reiniciar o computador.
 *   **Outros problemas:** Se você encontrar outros problemas, siga as instruções na tela ou consulte a seção para programadores para obter mais informações sobre como solucionar problemas.
 
 ---
@@ -123,7 +123,7 @@ Para gerar o aplicativo de desktop (Windows, Linux, macOS):
     ```bash
     cd backend
     pip install pyinstaller
-    python -m PyInstaller livox-backend.spec
+    python -m PyInstaller lylyreader-backend.spec
     cd ..
     ```
 4.  **Execute o script de build do Electron:**
@@ -167,7 +167,7 @@ Este projeto está sob a licença MIT:
 
 MIT License
 
-Copyright (c) 2025 LiVox Team
+Copyright (c) 2025 LylyReader Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

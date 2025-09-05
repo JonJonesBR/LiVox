@@ -32,7 +32,7 @@ export function FileUploadCard({
           Upload de Arquivo
         </CardTitle>
         <CardDescription>
-          Selecione um arquivo para converter em audiobook
+          Selecione um arquivo para converter em LylyReader
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -26,6 +26,8 @@ import html2text
 import json
 from typing import Optional
 import logging
+import time
+import threading
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -33,12 +35,12 @@ logger = logging.getLogger(__name__)
 
 nest_asyncio.apply()
 
-app = FastAPI(title="Audiobook Generator API", version="1.0.0")
+app = FastAPI(title="LylyReader API", version="1.0.0")
 
 # Adicionar CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especifique as origens permitidas
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -194,13 +196,23 @@ SIGLA_COM_PONTOS_RE = re.compile(r'\b([A-Z]\.\s*)+$')
 # === ROTAS ESTÁTICAS E PRINCIPAIS ===
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/", response_class=JSONResponse)
+@app.get("/")
 async def root():
-    return {"message": "Audiobook Generator API", "version": "1.0.0"}
+    try:
+        return JSONResponse({"message": "LylyReader API", "version": "1.0.0"})
+    except Exception as e:
+        logger.error(f"❌ Erro no endpoint raiz: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro no endpoint raiz"}, status_code=500)
 
 @app.get("/health", response_class=JSONResponse)
 async def health_check():
-    return {"status": "ok", "message": "Application is healthy."}
+    try:
+        return JSONResponse({"status": "ok", "message": "Application is healthy."})
+    except Exception as e:
+        logger.error(f"❌ Erro na verificação de saúde: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"status": "error", "message": "Erro na verificação de saúde"}, status_code=500)
 
 def _formatar_numeracao_capitulos(texto):
     def substituir_cap(match):
@@ -621,8 +633,13 @@ async def get_available_voices():
 async def get_voices_endpoint():
     """Endpoint que lista as vozes disponíveis para o frontend."""
     logger.info("Recebida requisição para /voices")
-    voices = await get_available_voices()
-    return voices
+    try:
+        voices = await get_available_voices()
+        return JSONResponse(voices)
+    except Exception as e:
+        logger.error(f"❌ Erro ao obter vozes disponíveis: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro ao carregar vozes disponíveis"}, status_code=500)
 
 @app.post("/process_file")
 async def process_file_endpoint(
@@ -633,73 +650,102 @@ async def process_file_endpoint(
     book_title: Optional[str] = Form(None)
 ):
     logger.info(f"Recebida requisição para /process_file com arquivo: {file.filename}, voz: {voice}, use_gemini: {use_gemini}, book_title: {book_title}")
-    if not file or not file.filename:
-        raise HTTPException(status_code=400, detail="Arquivo inválido ou não enviado.")
-
     try:
-        suffix = Path(file.filename).suffix
-        with NamedTemporaryFile(delete=False, dir="uploads", suffix=suffix) as temp_file:
-            contents = await file.read()
-            temp_file.write(contents)
-            temp_file_path = temp_file.name
+        if not file or not file.filename:
+            raise HTTPException(status_code=400, detail="Arquivo inválido ou não enviado.")
+
+        try:
+            suffix = Path(file.filename).suffix
+            with NamedTemporaryFile(delete=False, dir="uploads", suffix=suffix) as temp_file:
+                contents = await file.read()
+                temp_file.write(contents)
+                temp_file_path = temp_file.name
+        except Exception as e:
+            logger.error(f"❌ Erro real ao salvar arquivo temporário: {e}")
+            raise HTTPException(status_code=500, detail="Erro ao salvar arquivo no servidor.")
+
+        task_id = str(uuid.uuid4())
+        conversion_tasks[task_id] = {
+            "status": "in_queue",
+            "message": "Tarefa recebida e na fila.",
+            "progress": 0,
+            "file_path": None,
+            "timestamp": time.time()  # Add timestamp for cleanup
+        }
+
+        background_tasks.add_task(
+            perform_conversion_task, temp_file_path, voice, task_id, use_gemini, book_title
+        )
+
+        salvar_conversion_tasks()
+        logger.info(f"✅ Tarefa {task_id} iniciada para o arquivo {file.filename}.")
+
+        return JSONResponse({"task_id": task_id})
+    except HTTPException as he:
+        # Let middleware handle CORS for HTTP exceptions
+        return JSONResponse({"detail": he.detail}, status_code=he.status_code)
     except Exception as e:
-        logger.error(f"❌ Erro real ao salvar arquivo temporário: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao salvar arquivo no servidor.")
-
-    task_id = str(uuid.uuid4())
-    conversion_tasks[task_id] = {
-        "status": "in_queue",
-        "message": "Tarefa recebida e na fila.",
-        "progress": 0,
-        "file_path": None,
-        "timestamp": time.time()  # Add timestamp for cleanup
-    }
-
-    background_tasks.add_task(
-        perform_conversion_task, temp_file_path, voice, task_id, use_gemini, book_title
-    )
-
-    salvar_conversion_tasks()
-    logger.info(f"✅ Tarefa {task_id} iniciada para o arquivo {file.filename}.")
-
-    return JSONResponse({"task_id": task_id})
+        # Handle unexpected errors with CORS headers
+        logger.error(f"❌ Erro inesperado no process_file: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro interno do servidor"}, status_code=500)
 
 @app.get("/status/{task_id}", response_class=JSONResponse)
 async def get_task_status(task_id: str):
     """Endpoint para verificar o status de uma tarefa de conversão."""
     logger.info(f"🔎 Verificando status da tarefa: {task_id}")
-    task = conversion_tasks.get(task_id)
-    if not task:
-        logger.error(f"❌ Tarefa {task_id} não encontrada no dicionário.")
-        raise HTTPException(status_code=404, detail="Tarefa não encontrada ou expirada.")
-    return task
+    try:
+        if task_id in conversion_tasks:
+            return JSONResponse(conversion_tasks[task_id])
+        else:
+            return JSONResponse({"detail": "Tarefa não encontrada."}, status_code=404)
+    except Exception as e:
+        logger.error(f"❌ Erro ao obter status da tarefa {task_id}: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro ao obter status da tarefa"}, status_code=500)
 
 @app.get("/download/{task_id}")
-async def download_file(task_id: str):
+async def download_audiobook(task_id: str):
     """Endpoint para baixar o audiobook finalizado."""
-    task = conversion_tasks.get(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Tarefa não encontrada.")
-
-    if task.get("status") != "completed":
-        raise HTTPException(status_code=409, detail=f"A tarefa ainda não foi concluída. Status: {task.get('message')}")
-
-    file_path = task.get("file_path")
-    if not file_path or not os.path.exists(file_path):
-        logger.error(f"❌ Arquivo final não encontrado para a tarefa {task_id} em {file_path}")
-        raise HTTPException(status_code=404, detail="O arquivo final não foi encontrado no servidor.")
+    logger.info(f"📥 Solicitação de download para a tarefa: {task_id}")
     
-    filename = os.path.basename(file_path)
-    return FileResponse(path=file_path, filename=filename, media_type='audio/mpeg')
+    try:
+        if task_id not in conversion_tasks:
+            return JSONResponse({"detail": "Tarefa não encontrada."}, status_code=404)
+        
+        task_info = conversion_tasks[task_id]
+        
+        if task_info["status"] != "completed":
+            return JSONResponse({"detail": "O audiobook ainda não foi gerado."}, status_code=400)
+        
+        if not task_info.get("file_path") or not os.path.exists(task_info["file_path"]):
+            return JSONResponse({"detail": "Arquivo de audiobook não encontrado."}, status_code=404)
+
+        # Create a response with explicit CORS headers
+        response = FileResponse(
+            path=task_info["file_path"],
+            media_type='audio/mpeg',
+            filename=os.path.basename(task_info["file_path"])
+        )
+        return response
+    except Exception as e:
+        logger.error(f"❌ Erro ao fazer download do audiobook {task_id}: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro ao fazer download do audiobook"}, status_code=500)
 
 @app.post("/set_gemini_api_key")
 async def set_gemini_api_key_endpoint(api_key: str = Form(...)):
-    """Configura a chave da API do Gemini."""
-    global GEMINI_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="Chave API não pode ser vazia.")
-    GEMINI_API_KEY = api_key
-    return JSONResponse({"message": "Chave API do Gemini configurada com sucesso!"})
+    """Endpoint para definir a chave da API do Google Gemini."""
+    logger.info("🔐 Recebida solicitação para definir a chave da API do Gemini")
+    try:
+        global GEMINI_API_KEY
+        GEMINI_API_KEY = api_key
+        save_gemini_api_key()
+        return JSONResponse({"message": "Chave da API do Google Gemini salva com sucesso!"})
+    except Exception as e:
+        logger.error(f"❌ Erro ao salvar chave da API do Gemini: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro ao salvar chave da API do Gemini"}, status_code=500)
 
 async def enhance_text_with_gemini(text: str) -> str:
     prompt = f"""
@@ -1026,67 +1072,25 @@ async def perform_conversion_task(file_path: str, voice: str, task_id: str, use_
 
 
 @app.post("/shutdown")
-async def shutdown_application():
-    """Endpoint to signal shutdown by creating shutdown.flag file."""
+async def shutdown_endpoint():
+    """Endpoint para desligar o servidor de forma segura."""
+    logger.info("🛑 Recebida solicitação de desligamento")
+    
     try:
-        # Add a simple authentication check to prevent unauthorized shutdown
-        # In a real application, you would implement proper authentication
-        flag_path = "../shutdown.flag"
+        response = JSONResponse({"message": "Servidor desligando..."})
         
-        # Check if flag already exists to prevent multiple shutdown signals
-        if os.path.exists(flag_path):
-            return JSONResponse({"message": "Shutdown already initiated"})
-            
-        with open(flag_path, "w") as f:
-            f.write("shutdown")
-        logger.info("🛑 Shutdown flag file created.")
+        # Schedule shutdown after a short delay to allow response to be sent
+        def delayed_shutdown():
+            time.sleep(1)
+            os._exit(0)
         
-        # Try to execute stop-local.bat automatically (if start-local.bat isn't monitoring)
-        try:
-            project_root = Path(__file__).resolve().parent.parent
-            stop_script = project_root / "stop-local.bat"
-            if stop_script.exists():
-                logger.info(f"🛑 Attempting to execute {stop_script} to stop services...")
-                # Execute the script in background via cmd
-                subprocess.Popen(["cmd", "/c", str(stop_script)], cwd=str(project_root), 
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            else:
-                logger.warning(f"Stop script not found: {stop_script}")
-        except Exception as e_run:
-            logger.warning(f"Error trying to execute stop-local.bat automatically: {e_run}")
+        threading.Thread(target=delayed_shutdown, daemon=True).start()
         
-        # Additional attempt: terminate processes listening on ports 8000 and 3000 (Windows)
-        try:
-            import platform
-            if platform.system().lower().startswith("win"):
-                logger.info("🛑 Trying to identify processes on ports 8000/3000 and terminate them (Windows)...")
-                try:
-                    netstat_out = subprocess.check_output("netstat -ano", shell=True, stderr=subprocess.DEVNULL)
-                    netstat_text = netstat_out.decode(errors='ignore')
-                    for port in (8000, 3000):
-                        for line in netstat_text.splitlines():
-                            if f":{port} " in line or f":{port}\t" in line or f":{port}" in line:
-                                parts = line.split()
-                                if parts:
-                                    pid = parts[-1]
-                                    if pid.isdigit():
-                                        try:
-                                            subprocess.run(["taskkill", "/PID", pid, "/F"], 
-                                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                            logger.info(f"🛑 Terminated PID {pid} listening on port {port}")
-                                        except Exception as e_kill:
-                                            logger.warning(f"Error terminating PID {pid}: {e_kill}")
-                except Exception as e_net:
-                    logger.warning(f"Error executing netstat/taskkill: {e_net}")
-            else:
-                logger.info("🛑 Non-Windows system detected; skipping automatic taskkill attempt.")
-        except Exception as e_extra:
-            logger.warning(f"Error in additional port termination attempt: {e_extra}")
-        
-        return JSONResponse({"message": "Shutdown signal sent. Shutting down."})
+        return response
     except Exception as e:
-        logger.error(f"Error creating shutdown.flag file: {e}")
-        raise HTTPException(status_code=500, detail="Error signaling shutdown.")
+        logger.error(f"❌ Erro ao desligar o servidor: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return JSONResponse({"detail": "Erro ao desligar o servidor"}, status_code=500)
 
 if __name__ == "__main__":
     import uvicorn
